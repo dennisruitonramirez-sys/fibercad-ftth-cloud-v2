@@ -6,6 +6,7 @@ window.onload = function () {
   renderTiaLegend();
   loadDemoProject();
   setupCanvasEvents();
+  refreshCloudProjectsDropdown(appState.projectId);
 };
 
 function renderTiaLegend() {
@@ -20,6 +21,7 @@ function renderTiaLegend() {
 }
 
 function newBlankProject() {
+  appState.projectId = `proj_${Date.now()}`;
   appState.projectName = 'Nuevo Proyecto FTTH Sin Título';
   appState.nodes = [];
   appState.cables = [];
@@ -31,6 +33,7 @@ function newBlankProject() {
 }
 
 function loadDemoProject() {
+  appState.projectId = 'proj_demo_01';
   appState.projectName = 'Red Troncal & Distribución GPON — Sector Norte';
   document.getElementById('project-subtitle').textContent = `Proyecto: ${appState.projectName}`;
 
@@ -134,6 +137,44 @@ function loadDemoProject() {
   appState.viewport = { x: 30, y: 40, zoom: 0.95 };
   renderAll();
   showToast('Red FTTH de ejemplo cargada con fusiones, reservas y cálculo GPON', 'success');
+}
+
+async function refreshCloudProjectsDropdown(selectedId = appState.projectId) {
+  const select = document.getElementById('cloud-project-select');
+  if (!select) return;
+
+  const projects = await FiberApiClient.listProjects();
+  const options = [];
+
+  if (selectedId && !projects.some(p => p.id === selectedId)) {
+    options.push(`<option value="${selectedId}" selected>${appState.projectName || selectedId}</option>`);
+  }
+
+  projects.forEach(p => {
+    const isSel = p.id === selectedId ? 'selected' : '';
+    options.push(`<option value="${p.id}" ${isSel}>${p.name} (${p.id})</option>`);
+  });
+
+  if (options.length === 0) {
+    options.push(`<option value="${selectedId || 'proj_demo_01'}">${appState.projectName || 'Proyecto FTTH'}</option>`);
+  }
+
+  select.innerHTML = options.join('');
+}
+
+async function handleCloudProjectChange(projectId) {
+  if (!projectId) return;
+  await FiberApiClient.loadProjectFromServer(projectId);
+}
+
+async function saveCurrentProjectToCloud() {
+  const customName = window.prompt('Nombre del proyecto FTTH para guardar en la nube:', appState.projectName);
+  if (customName && customName.trim()) {
+    appState.projectName = customName.trim();
+    document.getElementById('project-subtitle').textContent = `Proyecto: ${appState.projectName}`;
+  }
+  const targetId = appState.projectId || `proj_${Date.now()}`;
+  await FiberApiClient.saveProjectToServer(targetId);
 }
 
 function renderAll() {
@@ -256,6 +297,7 @@ function updateBottomStatusBar() {
 function exportProjectJSON() {
   const dataStr = JSON.stringify({
     version: '1.0',
+    projectId: appState.projectId || `proj_${Date.now()}`,
     projectName: appState.projectName,
     scaleMetersPerGrid: appState.scaleMetersPerGrid,
     gisOrigin: appState.gisOrigin,
@@ -280,6 +322,7 @@ function importProjectJSON(event) {
     try {
       const parsed = JSON.parse(e.target.result);
       if (parsed.nodes && parsed.cables) {
+        appState.projectId = parsed.projectId || `proj_${Date.now()}`;
         appState.projectName = parsed.projectName || 'Proyecto Importado';
         appState.scaleMetersPerGrid = parsed.scaleMetersPerGrid || 50;
         appState.nodes = parsed.nodes;
@@ -287,6 +330,7 @@ function importProjectJSON(event) {
         appState.selectedItem = null;
         document.getElementById('project-subtitle').textContent = `Proyecto: ${appState.projectName}`;
         renderAll();
+        refreshCloudProjectsDropdown(appState.projectId);
         showToast('Proyecto importado correctamente', 'success');
       }
     } catch (err) {
