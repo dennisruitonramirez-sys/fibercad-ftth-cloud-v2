@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberCAD FTTH Pro — Diseño &amp; Ingeniería Óptica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="js/config.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="h-screen w-screen flex flex-col font-sans text-sm">
+
+  <!-- ==================== TOP NAVIGATION BAR ==================== -->
+  <header class="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0 z-30">
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <i class="fa-solid fa-network-wired text-slate-950 text-base"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-base tracking-tight text-white">FiberCAD <span class="text-cyan-400">FTTH Pro</span></h1>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60">GPON / XGS-PON</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-none" id="project-subtitle">Proyecto: Red Troncal &amp; Distribución Sector Norte</p>
+      </div>
+    </div>
+
+    <!-- Center Main View Tabs -->
+    <nav class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+      <button onclick="switchMainTab('canvas')" id="tab-btn-canvas" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all bg-slate-800 text-cyan-400 shadow">
+        <i class="fa-solid fa-compass-drafting"></i>
+        <span>Plano de Red / Diseño</span>
+      </button>
+      <button onclick="switchMainTab('unifilar')" id="tab-btn-unifilar" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all text-slate-400 hover:text-slate-200">
+        <i class="fa-solid fa-diagram-project"></i>
+        <span>Diagrama Unifilar</span>
+      </button>
+      <button onclick="switchMainTab('budget')" id="tab-btn-budget" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all text-slate-400 hover:text-slate-200">
+        <i class="fa-solid fa-calculator"></i>
+        <span>Presupuesto Óptico y Metrado BOM</span>
+      </button>
+    </nav>
+
+    <!-- Right Actions & GIS Map Toggle -->
+    <div class="flex items-center gap-2">
+      <!-- GIS / Map Mode Selector (Future API Ready) -->
+      <div class="hidden xl:flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 mr-1" title="Arquitectura lista para integrar Google Maps / Leaflet / Mapbox">
+        <button onclick="setMapMode('cad')" id="btn-mode-cad" class="px-2.5 py-1 rounded-md text-[11px] font-medium bg-cyan-600/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+          <i class="fa-solid fa-border-all"></i> CAD Grid
+        </button>
+        <button onclick="setMapMode('gis')" id="btn-mode-gis" class="px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-map-location-dot text-emerald-400"></i> Vista GIS (API Ready)
+        </button>
+      </div>
+
+      <button onclick="loadDemoProject()" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-medium flex items-center gap-1.5 transition" title="Cargar red FTTH completa de ejemplo">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span class="hidden sm:inline">Red Ejemplo</span>
+      </button>
+
+      <button onclick="newBlankProject()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition" title="Nuevo proyecto en blanco">
+        <i class="fa-solid fa-file-circle-plus"></i>
+        <span class="hidden md:inline">Nuevo</span>
+      </button>
+
+      <div class="h-5 w-px bg-slate-800 mx-0.5"></div>
+
+      <button onclick="exportProjectJSON()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition" title="Exportar Proyecto (.JSON)">
+        <i class="fa-solid fa-download"></i>
+      </button>
+      <label class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs cursor-pointer transition" title="Importar Proyecto (.JSON)">
+        <i class="fa-solid fa-upload"></i>
+        <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importProjectJSON(event)" />
+      </label>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT PALETTE (Tools & FTTH Elements) -->
+    <aside id="left-sidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 z-20">
+      <!-- Interaction Tools -->
+      <div class="p-3 border-b border-slate-800">
+        <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+          <span>Herramientas de Edición</span>
+          <span class="text-[10px] font-mono text-slate-500">ESC: Cancelar</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button onclick="setTool('select')" id="tool-select" class="tool-btn active flex flex-col items-center justify-center p-2 rounded-lg bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 transition">
+            <i class="fa-solid fa-arrow-pointer text-sm mb-1"></i>
+            <span class="text-[11px] font-medium">Seleccionar</span>
+          </button>
+          <button onclick="setTool('cable')" id="tool-cable" class="tool-btn flex flex-col items-center justify-center p-2 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            <i class="fa-solid fa-bezier-curve text-sm mb-1 text-amber-400"></i>
+            <span class="text-[11px] font-medium">Trazar Fibra</span>
+          </button>
+          <button onclick="setTool('pan')" id="tool-pan" class="tool-btn flex flex-col items-center justify-center p-2 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            <i class="fa-solid fa-hand text-sm mb-1 text-slate-400"></i>
+            <span class="text-[11px] font-medium">Mover Vista</span>
+          </button>
+        </div>
+
+        <!-- Cable Quick Settings when Cable Tool is selected -->
+        <div id="cable-tool-options" class="mt-2.5 p-2.5 rounded-lg bg-slate-950 border border-amber-500/30 hidden">
+          <div class="text-[11px] font-semibold text-amber-300 mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-route"></i> Configuración de Nuevo Tendido
+          </div>
+          <div class="space-y-2">
+            <div>
+              <label class="text-[10px] text-slate-400 block">Tipo de Cable</label>
+              <select id="new-cable-type" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500">
+                <option value="troncal">Troncal / Feeder (ADSS)</option>
+                <option value="distribucion">Distribución (ADSS / Ducto)</option>
+                <option value="drop">Acometida Drop (1-2H)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div>
+                <label class="text-[10px] text-slate-400 block">Hilos (TIA-598)</label>
+                <select id="new-cable-cores" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono">
+                  <option value="1">1 Hilo</option>
+                  <option value="2">2 Hilos</option>
+                  <option value="4">4 Hilos</option>
+                  <option value="6">6 Hilos</option>
+                  <option value="12">12 Hilos</option>
+                  <option value="24" selected>24 Hilos</option>
+                  <option value="48">48 Hilos</option>
+                  <option value="96">96 Hilos</option>
+                  <option value="144">144 Hilos</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block">Reserva Coca (m)</label>
+                <input type="number" id="new-cable-reserve" value="20" min="0" max="500" step="5" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono" />
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-tight">
+              <i class="fa-solid fa-circle-info text-cyan-400"></i> Haz clic en un nodo origen, clic en el mapa para vértices/curvas y clic en el nodo destino.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FTTH Elements Palette -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-4">
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            Cabecera / Central (CO)
+          </div>
+          <div class="space-y-1.5">
+            <div draggable="true" ondragstart="handleDragStart(event, 'OLT')" onclick="quickPlaceNode('OLT')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
+                <i class="fa-solid fa-server"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">OLT GPON / XGS</div>
+                <div class="text-[10px] text-slate-400 truncate">Terminal Óptico (+3 a +7 dBm)</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+
+            <div draggable="true" ondragstart="handleDragStart(event, 'ODF')" onclick="quickPlaceNode('ODF')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-300 shrink-0">
+                <i class="fa-solid fa-bars-staggered"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">ODF / Distribuidor</div>
+                <div class="text-[10px] text-slate-400 truncate">Bandejas y Patchcords</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            Planta Externa (OSP)
+          </div>
+          <div class="space-y-1.5">
+            <div draggable="true" ondragstart="handleDragStart(event, 'MUFA')" onclick="quickPlaceNode('MUFA')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shrink-0">
+                <i class="fa-solid fa-capsules"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">Mufa / Cierre FOSC</div>
+                <div class="text-[10px] text-slate-400 truncate">Empalme, Sangría y Splitter N1</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+
+            <div draggable="true" ondragstart="handleDragStart(event, 'NAP')" onclick="quickPlaceNode('NAP')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">Caja NAP / CTO</div>
+                <div class="text-[10px] text-slate-400 truncate">8/16/24 Puertos + Splitter N2</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+
+            <div draggable="true" ondragstart="handleDragStart(event, 'SPLITTER')" onclick="quickPlaceNode('SPLITTER')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+                <i class="fa-solid fa-code-branch"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">Splitter Óptico PLC/FBT</div>
+                <div class="text-[10px] text-slate-400 truncate">1:2 a 1:64 / Desbalanceado</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+
+            <div draggable="true" ondragstart="handleDragStart(event, 'POSTE')" onclick="quickPlaceNode('POSTE')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-slate-700/50 border border-slate-600 flex items-center justify-center text-slate-300 shrink-0">
+                <i class="fa-solid fa-tower-broadcast"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">Poste / Cámara</div>
+                <div class="text-[10px] text-slate-400 truncate">Soporte de ruta y reserva</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            Abonado / Última Milla
+          </div>
+          <div class="space-y-1.5">
+            <div draggable="true" ondragstart="handleDragStart(event, 'ONT')" onclick="quickPlaceNode('ONT')" class="palette-item group flex items-center gap-2.5 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 cursor-grab active:cursor-grabbing transition">
+              <div class="w-8 h-8 rounded-md bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shrink-0">
+                <i class="fa-solid fa-house-signal"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-semibold text-slate-100 group-hover:text-cyan-300">ONT / Cliente Final</div>
+                <div class="text-[10px] text-slate-400 truncate">Roseta + Router Óptico</div>
+              </div>
+              <i class="fa-solid fa-plus text-[10px] text-slate-600 group-hover:text-cyan-400"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIA-598-C Color Legend Quick Reference -->
+      <div class="p-3 bg-slate-950 border-t border-slate-800">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+          <span>Código TIA-598-C (1-12)</span>
+          <span class="text-cyan-400 font-mono">Estándar</span>
+        </div>
+        <div id="tia-legend-bar" class="grid grid-cols-6 gap-1"></div>
+      </div>
+    </aside>
+
+    <!-- ==================== CENTER CONTENT AREA ==================== -->
+    <main class="flex-1 flex flex-col relative overflow-hidden bg-slate-950">
+
+      <!-- VIEW 1: INTERACTIVE CAD / GIS CANVAS -->
+      <div id="view-canvas" class="flex-1 relative overflow-hidden flex flex-col">
+
+        <!-- Top Floating Canvas Controls -->
+        <div class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-10">
+          <!-- Scale & Wavelength Selector -->
+          <div class="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl px-3 py-1.5 pointer-events-auto shadow-xl">
+            <div class="flex items-center gap-1.5 text-xs">
+              <span class="text-slate-400">Escala:</span>
+              <input type="number" id="scale-meters-per-grid" value="50" min="1" max="1000" onchange="updateScale(this.value)" class="w-14 bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-cyan-300 font-mono text-xs text-center" />
+              <span class="text-slate-400 text-[11px]">m / cuadro</span>
+            </div>
+            <div class="h-4 w-px bg-slate-800"></div>
+            <div class="flex items-center gap-1.5 text-xs">
+              <span class="text-slate-400">Longitud &lambda;:</span>
+              <select id="wavelength-select" onchange="recalculateNetwork()" class="bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-emerald-300 font-mono text-xs">
+                <option value="1490" selected>1490 nm (GPON Down - 0.25 dB/km)</option>
+                <option value="1310">1310 nm (GPON Up - 0.35 dB/km)</option>
+                <option value="1550">1550 nm (CATV/XGS - 0.20 dB/km)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Zoom & View Controls -->
+          <div class="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-1 pointer-events-auto shadow-xl">
+            <button onclick="zoomCanvas(1.2)" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center justify-center" title="Acercar (+)">
+              <i class="fa-solid fa-magnifying-glass-plus text-xs"></i>
+            </button>
+            <span id="zoom-level-label" class="text-[11px] font-mono text-slate-300 px-1.5">100%</span>
+            <button onclick="zoomCanvas(0.8)" class="w-7 h-7 rounded-lg hover:bg-slate-800 text-slate-300 flex items-center justify-center" title="Alejar (-)">
+              <i class="fa-solid fa-magnifying-glass-minus text-xs"></i>
+            </button>
+            <button onclick="resetView()" class="px-2 h-7 rounded-lg hover:bg-slate-800 text-slate-300 text-[11px] font-medium flex items-center gap-1" title="Centrar Red">
+              <i class="fa-solid fa-expand text-xs"></i> Centrar
+            </button>
+          </div>
+        </div>
+
+        <!-- GIS Future API Architecture Banner (Visible only in GIS Preview Mode) -->
+        <div id="gis-mode-banner" class="hidden absolute top-16 left-3 right-3 bg-emerald-950/90 backdrop-blur-md border border-emerald-500/40 rounded-xl px-4 py-2.5 z-10 flex items-center justify-between shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-emerald-200 flex items-center gap-2">
+                Capa Geográfica GIS Activada (Proyección WGS84 / EPSG:4326 Lista para API)
+                <span class="px-1.5 py-0.5 text-[10px] font-mono bg-emerald-500/20 rounded border border-emerald-400/30">Leaflet / Google Maps Hook</span>
+              </div>
+              <p class="text-[11px] text-emerald-300/80">
+                Los nodos y polilíneas almacenan coordenadas relativas y geográficas (`lat`, `lng`). Conecta tu API Key en <code class="font-mono bg-slate-950/60 px-1 rounded">MapProviderAdapter</code> para renderizar calles reales debajo de esta capa vectorial.
+              </p>
+            </div>
+          </div>
+          <button onclick="setMapMode('cad')" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs border border-emerald-400/30 shrink-0">
+            Volver a CAD
+          </button>
+        </div>
+
+        <!-- Interactive Canvas Container -->
+        <div id="canvas-wrapper"
+             class="flex-1 w-full h-full relative overflow-hidden cad-bg cursor-crosshair"
+             ondragover="event.preventDefault()"
+             ondrop="handleCanvasDrop(event)">
+
+          <!-- Simulated GIS Street/Terrain Vector Backdrop (Shown in GIS mode) -->
+          <svg id="gis-backdrop-svg" class="hidden absolute inset-0 w-full h-full pointer-events-none opacity-35"></svg>
+
+          <!-- Main Vector SVG Network Layer -->
+          <svg id="network-svg" class="w-full h-full block">
+            <defs>
+              <filter id="glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <marker id="arrow-flow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+              </marker>
+            </defs>
+            <g id="viewport-group">
+              <g id="grid-layer"></g>
+              <g id="cables-layer"></g>
+              <g id="draft-layer"></g>
+              <g id="reserves-layer"></g>
+              <g id="nodes-layer"></g>
+            </g>
+          </svg>
+
+          <!-- Drawing Cable Floating Helper Toast -->
+          <div id="drawing-helper-bar" class="hidden absolute bottom-12 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-amber-500/50 text-amber-200 px-4 py-2 rounded-full shadow-2xl flex items-center gap-3 z-20">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span class="text-xs font-medium" id="drawing-helper-text">Trazando fibra: Haz clic en el mapa para agregar vértices/curvas o en un nodo destino para finalizar.</span>
+            <button onclick="cancelCableDrawing()" class="px-2 py-0.5 rounded bg-red-500/20 hover:bg-red-500/30 text-red-300 text-[11px] border border-red-500/30">
+              Cancelar (ESC)
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar (Coordinates, Lat/Lng Projection, Network Summary) -->
+        <div class="h-8 bg-slate-900 border-t border-slate-800 px-3 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0">
+          <div class="flex items-center gap-4">
+            <span id="cursor-cad-coords">CAD: X: 0m, Y: 0m</span>
+            <span class="text-cyan-400" id="cursor-gis-coords">GIS (WGS84): -8.111600, -79.028700</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span id="status-total-fiber">Fibra Total: 0 m</span>
+            <span id="status-total-splices">Fusiones Activas: 0</span>
+            <span class="text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-circle text-[7px]"></i> Motor Óptico Activo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: AUTOMATIC SINGLE-LINE DIAGRAM (DIAGRAMA UNIFILAR) -->
+      <div id="view-unifilar" class="hidden flex-1 flex-col bg-slate-950 overflow-hidden">
+        <div class="p-4 bg-slate-900/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+              Diagrama Unifilar Jerárquico de Red FTTH
+            </h2>
+            <p class="text-xs text-slate-400">Generado automáticamente desde la topología física, empalmes internos y niveles de splitteo.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3 text-[11px] bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+              <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Señal Óptima (-8 a -24 dBm)</span>
+              <span class="flex items-center gap-1.5 text-amber-400"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Margen Ajustado (-24 a -27 dBm)</span>
+              <span class="flex items-center gap-1.5 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Crítico / Sin Luz (&lt; -27 dBm)</span>
+            </div>
+            <button onclick="renderSingleLineDiagram()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold text-xs flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-rotate"></i> Actualizar Esquema
+            </button>
+          </div>
+        </div>
+        <div id="unifilar-container" class="flex-1 overflow-auto p-6 relative cad-bg"></div>
+      </div>
+
+      <!-- VIEW 3: OPTICAL POWER BUDGET & BILL OF MATERIALS (BOM) -->
+      <div id="view-budget" class="hidden flex-1 flex-col bg-slate-950 overflow-y-auto p-6 space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="engineering-kpi-cards"></div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-wave-square text-emerald-400"></i>
+                Análisis de Presupuesto Óptico Punto a Punto (OLT &rarr; NAP / ONT)
+              </h3>
+              <p class="text-xs text-slate-400">Cálculo real considerando longitud de onda seleccionada, atenuación kilométrica, reservas técnicas, fusiones (0.08 dB), conectores (0.40 dB) y splitters.</p>
+            </div>
+            <span class="text-xs font-mono px-2.5 py-1 rounded bg-slate-950 border border-slate-700 text-cyan-300" id="budget-wavelength-badge">1490 nm</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <th class="py-3 px-4">Elemento Destino</th>
+                  <th class="py-3 px-4">Ruta / Origen</th>
+                  <th class="py-3 px-4 text-right">Dist. Óptica</th>
+                  <th class="py-3 px-4 text-center">Splitteo Total</th>
+                  <th class="py-3 px-4 text-right">Fusiones / Con.</th>
+                  <th class="py-3 px-4 text-right">Atenuación Total</th>
+                  <th class="py-3 px-4 text-right">Potencia RX</th>
+                  <th class="py-3 px-4 text-center">Estado GPON</th>
+                </tr>
+              </thead>
+              <tbody id="power-budget-tbody" class="divide-y divide-slate-800/70 text-xs font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-list text-cyan-400"></i>
+                Lista de Materiales (BOM) — Equipamiento y Herrajes
+              </h3>
+              <button onclick="copyBOMToClipboard()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 border border-slate-700">
+                <i class="fa-regular fa-copy"></i> Copiar Tabla
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <th class="py-2.5 px-4">Ítem / Descripción</th>
+                    <th class="py-2.5 px-4">Especificación</th>
+                    <th class="py-2.5 px-4 text-right">Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody id="bom-hardware-tbody" class="divide-y divide-slate-800/70 text-xs"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="p-4 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-ruler-combined text-amber-400"></i>
+                Metrado Detallado de Cables de Fibra Óptica
+              </h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-950/70 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <th class="py-2.5 px-4">Tramo</th>
+                    <th class="py-2.5 px-4">Tipo / Hilos</th>
+                    <th class="py-2.5 px-4 text-right">Tendido</th>
+                    <th class="py-2.5 px-4 text-right">Reservas</th>
+                    <th class="py-2.5 px-4 text-right">Total +5%</th>
+                  </tr>
+                </thead>
+                <tbody id="bom-cables-tbody" class="divide-y divide-slate-800/70 text-xs font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- RIGHT INSPECTOR PANEL (Properties, Reserves & Quick Splice Trigger) -->
+    <aside id="right-sidebar" class="w-80 bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 z-20">
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-cyan-400"></i> Inspector de Elemento
+        </span>
+        <span id="inspector-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">Ninguno</span>
+      </div>
+
+      <div id="inspector-content" class="flex-1 overflow-y-auto p-4">
+        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500 p-4">
+          <div class="w-12 h-12 rounded-2xl bg-slate-850 border border-slate-800 flex items-center justify-center mb-3 text-slate-400">
+            <i class="fa-solid fa-arrow-pointer text-lg"></i>
+          </div>
+          <p class="text-xs font-medium text-slate-300 mb-1">Selecciona un nodo o cable</p>
+          <p class="text-[11px] leading-relaxed">Haz clic en cualquier elemento del plano para editar sus parámetros, añadir reservas de fibra o abrir el <strong class="text-cyan-400">Gestor de Fusiones</strong>.</p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ==================== VISUAL FUSION & SPLICING MODAL ==================== -->
+  <div id="splice-modal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-6xl h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+
+      <div class="px-5 py-3.5 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300">
+            <i class="fa-solid fa-fire-flame-curved text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white" id="splice-modal-title">Gestor de Fusiones y Bandejas — Mufa FOSC-01</h2>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800" id="splice-modal-type">MUFA</span>
+            </div>
+            <p class="text-xs text-slate-400">Haz clic en un <span class="text-cyan-300 font-medium">hilo/puerto de origen</span> y luego en un <span class="text-emerald-300 font-medium">hilo/puerto destino</span> para fusionar o conectar.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="autoMassSplice1to1()" class="px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 text-xs font-medium flex items-center gap-1.5 transition" title="Empalmar automáticamente hilos libres 1 a 1 entre cable entrante y saliente">
+            <i class="fa-solid fa-wand-sparkles"></i> Fusión Masiva 1:1
+          </button>
+          <button onclick="clearNodeSplices()" class="px-3 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-medium flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-trash-can"></i> Limpiar Fusiones
+          </button>
+          <button onclick="closeSpliceModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex overflow-hidden relative bg-slate-950" id="splice-workspace">
+
+        <div class="w-72 border-r border-slate-800 bg-slate-900/60 flex flex-col overflow-hidden shrink-0">
+          <div class="p-2.5 bg-slate-900 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-cyan-300 flex items-center justify-between">
+            <span><i class="fa-solid fa-arrow-right-to-bracket mr-1.5"></i>Entrada (Feed / OLT)</span>
+            <span id="splice-in-count" class="font-mono text-slate-400">0 hilos</span>
+          </div>
+          <div id="splice-left-list" class="flex-1 overflow-y-auto p-2.5 space-y-3"></div>
+        </div>
+
+        <div class="flex-1 relative overflow-y-auto flex flex-col items-center p-4" id="splice-center-area">
+          <div id="internal-splitter-panel" class="w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-xl p-3 mb-4 z-10 shadow-lg"></div>
+          <svg id="splice-connections-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0"></svg>
+          <div class="w-full max-w-lg bg-slate-900/95 border border-slate-800 rounded-xl p-3 z-10 mt-auto shadow-xl">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check text-emerald-400"></i> Tabla de Fusiones / Conexiones en Bandeja (<span id="active-tray-count">0</span>)
+              </span>
+              <span class="text-[10px] text-slate-400">Clic en <i class="fa-solid fa-xmark text-red-400"></i> para deshacer</span>
+            </div>
+            <div id="splice-tray-list" class="max-h-40 overflow-y-auto space-y-1 pr-1"></div>
+          </div>
+        </div>
+
+        <div class="w-72 border-l border-slate-800 bg-slate-900/60 flex flex-col overflow-hidden shrink-0">
+          <div class="p-2.5 bg-slate-900 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center justify-between">
+            <span><i class="fa-solid fa-arrow-right-from-bracket mr-1.5"></i>Salida (Distribución / Drop)</span>
+            <span id="splice-out-count" class="font-mono text-slate-400">0 hilos</span>
+          </div>
+          <div id="splice-right-list" class="flex-1 overflow-y-auto p-2.5 space-y-3"></div>
+        </div>
+
+      </div>
+
+      <div class="px-5 py-2.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+        <div id="splice-selection-status" class="font-mono text-cyan-300">
+          Listo: Selecciona un hilo de color para iniciar un empalme por fusión.
+        </div>
+        <button onclick="closeSpliceModal()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold transition">
+          Guardar y Aplicar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast-notification" class="fixed bottom-12 right-5 bg-slate-900 border border-cyan-500/50 text-white px-4 py-2.5 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2.5 text-xs">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+    <span id="toast-message">Operación completada</span>
+  </div>
+
+  <!-- Application Modules -->
+  <script src="js/standards.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/optical-engine.js"></script>
+  <script src="js/canvas-renderer.js"></script>
+  <script src="js/canvas-interactions.js"></script>
+  <script src="js/inspector.js"></script>
+  <script src="js/splicing-modal.js"></script>
+  <script src="js/unifilar-and-budget.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
