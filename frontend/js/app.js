@@ -409,33 +409,108 @@ function exportSpecificPDF(kind = 'cad') {
 
   } else if (kind === 'budget') {
     docTitle = `Presupuesto Óptico y Metrado BOM — ${projectTitle}`;
-    if (typeof computeOpticalNetwork === 'function') {
-      renderBudgetAndBOM(computeOpticalNetwork());
-    } else {
-      renderBudgetAndBOM();
+    const opticalMap = typeof computeOpticalNetwork === 'function' ? computeOpticalNetwork() : null;
+    if (typeof renderBudgetAndBOM === 'function') {
+      renderBudgetAndBOM(opticalMap);
     }
 
     const budgetView = document.getElementById('view-budget');
-    if (!budgetView) {
-      showToast('No se pudo generar el Presupuesto y BOM', 'warning');
-      return;
+    let existingCloneHtml = '';
+
+    if (budgetView) {
+      const tempClone = budgetView.cloneNode(true);
+      tempClone.classList.remove('hidden', 'flex', 'overflow-hidden', 'overflow-auto', 'h-full');
+      tempClone.querySelectorAll('*').forEach(el => {
+        el.classList.remove('hidden', 'overflow-hidden', 'overflow-auto', 'overflow-y-auto', 'overflow-x-auto', 'h-full', 'max-h-screen');
+      });
+      tempClone.querySelectorAll('button').forEach(btn => btn.remove());
+      existingCloneHtml = tempClone.innerHTML;
     }
 
-    const clonedBudget = budgetView.cloneNode(true);
-    clonedBudget.classList.remove('hidden', 'flex', 'overflow-hidden', 'overflow-auto', 'h-full');
-    clonedBudget.style.display = 'block';
-    clonedBudget.style.height = 'auto';
-    clonedBudget.style.maxHeight = 'none';
-    clonedBudget.style.overflow = 'visible';
+    // Metrado consolidado de cables y nodos como respaldo/complemento garantizado
+    const cableRows = (appState.cables || []).map(c => {
+      const routeM = typeof calculateCableRouteMeters === 'function'
+        ? Math.round(calculateCableRouteMeters(c))
+        : 0;
+      const resM = Number(c.reserveMeters || 0);
+      const totalM = routeM + resM;
+      return `
+        <tr>
+          <td>${c.name || c.id}</td>
+          <td>${c.type || '-'}</td>
+          <td>${c.cores || 1}H</td>
+          <td>${routeM} m</td>
+          <td>${resM} m</td>
+          <td><strong>${totalM} m</strong></td>
+        </tr>
+      `;
+    }).join('');
 
-    clonedBudget.querySelectorAll('*').forEach(el => {
-      el.classList.remove('hidden', 'overflow-hidden', 'overflow-auto', 'overflow-y-auto', 'overflow-x-auto', 'h-full', 'max-h-screen');
-      el.style.maxHeight = 'none';
-      el.style.overflow = 'visible';
+    const nodeCounts = {};
+    let totalNodeReserve = 0;
+    let totalSplices = 0;
+
+    (appState.nodes || []).forEach(n => {
+      const t = n.type || 'NODO';
+      nodeCounts[t] = (nodeCounts[t] || 0) + 1;
+      totalNodeReserve += Number(n.reserveMeters || 0);
+      totalSplices += Array.isArray(n.splices) ? n.splices.length : 0;
     });
 
-    clonedBudget.querySelectorAll('button').forEach(btn => btn.remove());
-    contentHtml = clonedBudget.innerHTML;
+    const nodeSummaryRows = Object.entries(nodeCounts).map(([type, qty]) => `
+      <tr>
+        <td>${type}</td>
+        <td>${qty}</td>
+      </tr>
+    `).join('');
+
+    const fallbackSummaryHtml = `
+      <div class="bom-fallback-section" style="margin-top:16px;">
+        <h2 style="margin:12px 0 6px;font-size:13px;color:#38bdf8;">Metrado de Cables y Reservas</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tramo / Cable</th>
+              <th>Tipo</th>
+              <th>Hilos</th>
+              <th>Tendido</th>
+              <th>Reserva</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cableRows || '<tr><td colspan="6">Sin cables registrados</td></tr>'}
+          </tbody>
+        </table>
+
+        <h2 style="margin:14px 0 6px;font-size:13px;color:#38bdf8;">Resumen de Elementos y Fusiones</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de Elemento</th>
+              <th>Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${nodeSummaryRows || '<tr><td colspan="2">Sin nodos registrados</td></tr>'}
+            <tr>
+              <td><strong>Reserva acumulada en nodos</strong></td>
+              <td><strong>${totalNodeReserve} m</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Fusiones / Empalmes configurados</strong></td>
+              <td><strong>${totalSplices}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Si el clon ya tiene tablas con filas, usamos el clon; si no, inyectamos el metrado completo
+    const clonedHasTables = existingCloneHtml && /<tbody[^>]*>[\s\S]*?<tr/i.test(existingCloneHtml);
+    contentHtml = clonedHasTables
+      ? `${existingCloneHtml}${fallbackSummaryHtml}`
+      : `${existingCloneHtml}${fallbackSummaryHtml}`;
   }
 
   let portal = document.getElementById('print-portal');
