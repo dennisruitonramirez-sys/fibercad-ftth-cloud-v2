@@ -13,21 +13,37 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'FiberCAD FTTH Backend API', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/projects', (req, res) => {
-  res.json(getProjects());
-});
-
-app.get('/api/projects/:id', (req, res) => {
-  const project = getProjectById(req.params.id);
-  if (!project) {
-    return res.status(404).json({ error: 'Proyecto no encontrado' });
+app.get('/api/projects', async (req, res) => {
+  try {
+    const projects = await getProjects();
+    res.json(projects);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener proyectos' });
   }
-  res.json(project);
 });
 
-app.put('/api/projects/:id', (req, res) => {
-  const saved = saveProject(req.params.id, req.body);
-  res.json({ ok: true, project: saved });
+app.get('/api/projects/:id', async (req, res) => {
+  try {
+    const project = await getProjectById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al consultar el proyecto' });
+  }
+});
+
+app.put('/api/projects/:id', async (req, res) => {
+  try {
+    const saved = await saveProject(req.params.id, req.body);
+    res.json({ ok: true, project: saved });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al guardar el proyecto' });
+  }
 });
 
 app.post('/api/optical/budget', (req, res) => {
