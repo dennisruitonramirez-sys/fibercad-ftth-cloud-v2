@@ -341,13 +341,68 @@ function importProjectJSON(event) {
 }
 
 function exportActiveViewPDF() {
-  if (!document.getElementById('view-unifilar').classList.contains('hidden')) {
+  const isCanvasVisible = !document.getElementById('view-canvas').classList.contains('hidden');
+  const isUnifilarVisible = !document.getElementById('view-unifilar').classList.contains('hidden');
+  const isBudgetVisible = !document.getElementById('view-budget').classList.contains('hidden');
+
+  if (isUnifilarVisible) {
     renderSingleLineDiagram();
-  } else if (!document.getElementById('view-budget').classList.contains('hidden')) {
+  } else if (isBudgetVisible) {
     renderBudgetAndBOM();
   }
-  showToast('Selecciona "Guardar como PDF" y orientación horizontal en el diálogo', 'info');
-  setTimeout(() => window.print(), 150);
+
+  let netSvg = null;
+  let prevViewBox = null;
+
+  if (isCanvasVisible) {
+    netSvg = document.getElementById('network-svg');
+    if (netSvg) {
+      prevViewBox = netSvg.getAttribute('viewBox');
+
+      const pointsX = [];
+      const pointsY = [];
+
+      (appState.nodes || []).forEach(n => {
+        if (typeof n.x === 'number' && typeof n.y === 'number') {
+          pointsX.push(n.x);
+          pointsY.push(n.y);
+        }
+      });
+
+      (appState.cables || []).forEach(c => {
+        (c.waypoints || []).forEach(wp => {
+          if (typeof wp.x === 'number' && typeof wp.y === 'number') {
+            pointsX.push(wp.x);
+            pointsY.push(wp.y);
+          }
+        });
+      });
+
+      if (pointsX.length > 0 && pointsY.length > 0) {
+        const minX = Math.min(...pointsX) - 140;
+        const minY = Math.min(...pointsY) - 120;
+        const maxX = Math.max(...pointsX) + 160;
+        const maxY = Math.max(...pointsY) + 140;
+        const w = Math.max(800, maxX - minX);
+        const h = Math.max(500, maxY - minY);
+        netSvg.setAttribute('viewBox', `${minX} ${minY} ${w} ${h}`);
+      }
+    }
+  }
+
+  showToast('En "Destino" elige "Guardar como PDF" y orientación Horizontal', 'info');
+
+  const restoreAfterPrint = () => {
+    if (netSvg) {
+      if (prevViewBox) netSvg.setAttribute('viewBox', prevViewBox);
+      else netSvg.removeAttribute('viewBox');
+    }
+    renderAll();
+    window.removeEventListener('afterprint', restoreAfterPrint);
+  };
+
+  window.addEventListener('afterprint', restoreAfterPrint);
+  setTimeout(() => window.print(), 200);
 }
 
 let toastTimer = null;
