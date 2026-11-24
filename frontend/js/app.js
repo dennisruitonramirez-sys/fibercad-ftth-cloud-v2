@@ -494,15 +494,32 @@ function exportSpecificPDF(kind = 'cad') {
     <div>${contentHtml}</div>
   `;
 
+  const orientationClass = kind === 'budget' ? 'print-portrait' : 'print-landscape';
+  const pageSize = kind === 'budget' ? 'portrait' : 'landscape';
+
+  let pageStyleEl = document.getElementById('print-page-rule');
+  if (!pageStyleEl) {
+    pageStyleEl = document.createElement('style');
+    pageStyleEl.id = 'print-page-rule';
+    document.head.appendChild(pageStyleEl);
+  }
+  pageStyleEl.textContent = `
+    @page {
+      size: ${pageSize};
+      margin: 8mm;
+    }
+  `;
+
   const cleanup = () => {
-    document.body.classList.remove('printing-mode');
+    document.body.classList.remove('printing-mode', 'print-portrait', 'print-landscape');
+    if (pageStyleEl) pageStyleEl.remove();
     if (portal) portal.innerHTML = '';
     window.removeEventListener('afterprint', cleanup);
   };
 
   window.addEventListener('afterprint', cleanup);
-  document.body.classList.add('printing-mode');
-  setTimeout(() => window.print(), 120);
+  document.body.classList.add('printing-mode', orientationClass);
+  setTimeout(() => window.print(), 150);
 } //funcion para generar pdf
 
 let toastTimer = null;
