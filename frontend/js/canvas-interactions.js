@@ -1,15 +1,17 @@
 /**
  * Interacciones de usuario sobre el lienzo: paneo, zoom, arrastre de nodos/vértices,
- * trazado de cables y drag-and-drop desde la paleta.
+ * trazado de cables, drag-and-drop desde la paleta y soporte táctil (móvil/tablet).
  */
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let draggingNodeId = null;
 let draggingWaypoint = null;
+let lastPinchDist = null;
 
 function setupCanvasEvents() {
   const svg = document.getElementById('network-svg');
 
+  // ==================== EVENTOS DE RATÓN (ESCRITORIO) ====================
   svg.addEventListener('mousedown', (e) => {
     if (e.target.classList.contains('waypoint-handle')) {
       e.stopPropagation();
@@ -100,6 +102,131 @@ function setupCanvasEvents() {
     zoomCanvas(factor);
   }, { passive: false });
 
+  // ==================== EVENTOS TÁCTILES (CELULAR / TABLET) ====================
+  svg.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPanning = false;
+      draggingNodeId = null;
+      draggingWaypoint = null;
+      lastPinchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      return;
+    }
+
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+
+    if (e.target.classList.contains('waypoint-handle')) {
+      e.preventDefault();
+      draggingWaypoint = {
+        cableId: e.target.getAttribute('data-cable-id'),
+        idx: Number(e.target.getAttribute('data-wp-idx'))
+      };
+      return;
+    }
+
+    const nodeGroup = e.target.closest ? e.target.closest('.node-group') : null;
+    if (nodeGroup && appState.activeTool === 'select') {
+      const onMouseDownAttr = nodeGroup.getAttribute('onmousedown') || '';
+      const match = onMouseDownAttr.match(/startNodeDrag\(event,\s*'([^']+)'\)/);
+      if (match && match[1]) {
+        e.preventDefault();
+        draggingNodeId = match[1];
+        selectItem(null, 'node', draggingNodeId);
+        return;
+      }
+    }
+
+    const pt = screenToWorld(touch.clientX, touch.clientY);
+
+    if (appState.activeTool === 'cable' && appState.drawingCable && !nodeGroup) {
+      e.preventDefault();
+      appState.drawingCable.points.push({ x: Math.round(pt.x), y: Math.round(pt.y) });
+      renderDraftCable(pt);
+      return;
+    }
+
+    // Paneo con 1 dedo si está activa la herramienta 'pan' o si toca el fondo del lienzo
+    if (appState.activeTool === 'pan' || !nodeGroup) {
+      isPanning = true;
+      panStart = {
+        x: touch.clientX - appState.viewport.x,
+        y: touch.clientY - appState.viewport.y
+      };
+    }
+  }, { passive: false });
+
+  svg.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && lastPinchDist) {
+      e.preventDefault();
+      const newDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (newDist > 0) {
+        const factor = newDist / lastPinchDist;
+        lastPinchDist = newDist;
+        zoomCanvas(factor);
+      }
+      return;
+    }
+
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const pt = screenToWorld(touch.clientX, touch.clientY);
+
+    const mx = Math.round(cadToMeters(pt.x));
+    const my = Math.round(cadToMeters(pt.y));
+    const gis = cadToLatLng(pt.x, pt.y);
+    document.getElementById('cursor-cad-coords').textContent = `CAD: X: ${mx}m, Y: ${my}m`;
+    document.getElementById('cursor-gis-coords').textContent = `GIS (WGS84): ${gis.lat}, ${gis.lng}`;
+
+    if (isPanning) {
+      e.preventDefault();
+      appState.viewport.x = touch.clientX - panStart.x;
+      appState.viewport.y = touch.clientY - panStart.y;
+      const vp = document.getElementById('viewport-group');
+      vp.setAttribute('transform', `translate(${appState.viewport.x}, ${appState.viewport.y}) scale(${appState.viewport.zoom})`);
+      return;
+    }
+
+    if (draggingNodeId) {
+      e.preventDefault();
+      const node = appState.nodes.find(n => n.id === draggingNodeId);
+      if (node) {
+        node.x = Math.round(pt.x / 5) * 5;
+        node.y = Math.round(pt.y / 5) * 5;
+        renderAll();
+      }
+      return;
+    }
+
+    if (draggingWaypoint) {
+      e.preventDefault();
+      const cable = appState.cables.find(c => c.id === draggingWaypoint.cableId);
+      if (cable && cable.waypoints[draggingWaypoint.idx]) {
+        cable.waypoints[draggingWaypoint.idx] = {
+          x: Math.round(pt.x / 5) * 5,
+          y: Math.round(pt.y / 5) * 5
+        };
+        renderAll();
+      }
+    }
+  }, { passive: false });
+
+  const endTouchInteraction = () => {
+    isPanning = false;
+    draggingNodeId = null;
+    draggingWaypoint = null;
+    lastPinchDist = null;
+  };
+
+  svg.addEventListener('touchend', endTouchInteraction, { passive: true });
+  svg.addEventListener('touchcancel', endTouchInteraction, { passive: true });
+
+  // ==================== TECLADO ====================
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (appState.drawingCable) cancelCableDrawing();
