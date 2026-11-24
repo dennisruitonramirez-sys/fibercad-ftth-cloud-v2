@@ -17,8 +17,8 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     columns[r].push(n);
   });
 
-  const colWidth = 270;
-  const rowHeight = 140;
+  const colWidth = 300;
+  const rowHeight = 145;
   const startX = 60;
   const startY = 60;
 
@@ -35,35 +35,68 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     });
   });
 
-  const svgW = Math.max(1200, startX * 2 + 5 * colWidth);
-  const svgH = Math.max(540, startY * 2 + maxRows * rowHeight);
+  // Agrupar cables por nodo origen para asignar carriles separados y evitar superposición
+  const cablesByOrigin = {};
+  appState.cables.forEach(cab => {
+    if (!cablesByOrigin[cab.fromNodeId]) cablesByOrigin[cab.fromNodeId] = [];
+    cablesByOrigin[cab.fromNodeId].push(cab);
+  });
+
+  const dropPalette = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6'];
+  let extraLaneSpan = 0;
 
   const linesHtml = appState.cables.map(cab => {
     const p1 = nodePositions[cab.fromNodeId];
     const p2 = nodePositions[cab.toNodeId];
     if (!p1 || !p2) return '';
 
+    const siblings = cablesByOrigin[cab.fromNodeId] || [cab];
+    const laneIndex = siblings.indexOf(cab);
+    const totalLanes = siblings.length;
+
+    const laneStepX = 22;
+    const laneStepY = 8;
+    const centerShift = laneIndex - (totalLanes - 1) / 2;
+    extraLaneSpan = Math.max(extraLaneSpan, Math.abs(centerShift) * laneStepX);
+
     const x1 = p1.x + 170;
-    const y1 = p1.y + 38;
+    const y1 = p1.y + 38 + centerShift * laneStepY;
     const x2 = p2.x;
-    const y2 = p2.y + 38;
-    const midX = (x1 + x2) / 2;
+    const y2 = p2.y + 38 + centerShift * laneStepY;
+
+    const baseMidX = x1 + (x2 - x1) * 0.45;
+    const midX = Math.min(x2 - 28, Math.max(x1 + 28, baseMidX + centerShift * laneStepX));
 
     const routeM = calculateCableRouteMeters(cab);
     const totalM = routeM + Number(cab.reserveMeters || 0);
-    const color = cab.type === 'troncal' ? '#a855f7' : cab.type === 'drop' ? '#10b981' : '#38bdf8';
+
+    let color = '#38bdf8';
+    if (cab.type === 'troncal') {
+      color = '#a855f7';
+    } else if (cab.type === 'drop') {
+      color = dropPalette[laneIndex % dropPalette.length];
+    }
+
+    // Colocar la etiqueta en un punto escalonado para que no tape la línea ni otras etiquetas
+    const labelX = Math.min(x2 - 46, midX + 38 + (laneIndex % 2) * 14);
+    const labelY = y2 - 14 + (laneIndex % 3 - 1) * 6;
 
     return `
       <g>
         <path d="M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}"
-              fill="none" stroke="${color}" stroke-width="2.5" />
-        <rect x="${midX - 42}" y="${(y1 + y2) / 2 - 11}" width="84" height="22" rx="5" fill="#0f172a" stroke="${color}" stroke-width="1" />
-        <text x="${midX}" y="${(y1 + y2) / 2 + 3}" text-anchor="middle" fill="#f8fafc" font-size="9.5" font-family="JetBrains Mono">
+              fill="none" stroke="${color}" stroke-width="2.2" />
+        <rect x="${labelX - 42}" y="${labelY - 10}" width="84" height="20" rx="5"
+              fill="#0f172a" stroke="${color}" stroke-width="1.2" />
+        <text x="${labelX}" y="${labelY + 3.5}" text-anchor="middle" fill="#f8fafc"
+              font-size="9.5" font-family="JetBrains Mono">
           ${cab.cores}H &bull; ${totalM}m
         </text>
       </g>
     `;
   }).join('');
+
+  const svgW = Math.max(1200, startX * 2 + 5 * colWidth + extraLaneSpan * 2);
+  const svgH = Math.max(540, startY * 2 + maxRows * rowHeight);
 
   const blocksHtml = appState.nodes.map(n => {
     const pos = nodePositions[n.id];
