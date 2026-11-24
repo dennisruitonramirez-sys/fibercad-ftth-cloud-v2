@@ -289,7 +289,7 @@ body {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    max-height: 220px !important;
+    max-height: 245px !important;
     overflow-y: auto !important;
     border-left: none !important;
     border-right: none !important;
@@ -315,33 +315,35 @@ body {
     overflow: visible !important;
   }
 
-  /* Dejar que #view-canvas crezca según sus hijos sin recortar el gráfico */
   #view-canvas {
+    display: flex !important;
+    flex-direction: column !important;
     height: auto !important;
     min-height: 0 !important;
     width: 100% !important;
     overflow: visible !important;
   }
 
-  /* Barra de Escala, Longitud y Zoom en flujo normal arriba del gráfico sin taparlo */
+  /* Deshacer el contenedor envolvente para reordenar sus 2 bloques por separado */
   #view-canvas > div:first-child {
-    position: static !important;
+    display: contents !important;
+  }
+
+  /* Bloque 2 (Zoom y Centrar): arriba del área de diseño, compacto */
+  #view-canvas > div:first-child > div:last-child {
+    order: 1 !important;
     width: 100% !important;
-    padding: 6px 8px !important;
+    justify-content: center !important;
+    padding: 5px 8px !important;
     background: #0f172a !important;
     border-bottom: 1px solid #1e293b !important;
-    gap: 6px !important;
+    border-radius: 0 !important;
+    pointer-events: auto !important;
   }
 
-  #view-canvas > div:first-child > div {
-    width: 100% !important;
-    justify-content: space-between !important;
-    flex-wrap: wrap !important;
-    padding: 4px 8px !important;
-  }
-
-  /* Dar altura fija y completa exclusivamente al área del dibujo CAD */
+  /* Área de diseño CAD en el centro */
   #canvas-wrapper {
+    order: 2 !important;
     width: 100% !important;
     height: 56vh !important;
     min-height: 360px !important;
@@ -358,8 +360,23 @@ body {
     touch-action: none !important;
   }
 
-  /* Barra inferior de estado adaptable */
+  /* Bloque 1 marcado en rojo (Escala y Longitud λ): debajo del área de diseño */
+  #view-canvas > div:first-child > div:first-child {
+    order: 3 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    padding: 6px 10px !important;
+    background: #0f172a !important;
+    border-top: 1px solid #1e293b !important;
+    border-bottom: 1px solid #1e293b !important;
+    border-radius: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Barra inferior de estado al final */
   #view-canvas > div:last-child {
+    order: 4 !important;
     height: auto !important;
     min-height: 2rem;
     padding: 4px 8px !important;
