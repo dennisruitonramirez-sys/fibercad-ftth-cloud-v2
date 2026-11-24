@@ -76,5 +76,24 @@ const FiberApiClient = {
       showToast('Servidor remoto no conectado: guardado local en JSON disponible', 'info');
       return null;
     }
+  },
+
+  async deleteProjectFromServer(projectId) {
+    if (!projectId) return false;
+    try {
+      const res = await fetch(`${this.baseUrl}/projects/${encodeURIComponent(projectId)}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error('Error al borrar proyecto');
+      if (appState.projectId === projectId) {
+        loadDemoProject();
+      }
+      await refreshCloudProjectsDropdown(appState.projectId);
+      showToast('Proyecto eliminado de la nube', 'success');
+      return true;
+    } catch {
+      showToast('No se pudo eliminar el proyecto en el servidor', 'warning');
+      return false;
+    }
   }
 };
