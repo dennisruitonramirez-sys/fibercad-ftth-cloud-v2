@@ -71,6 +71,12 @@ body {
   animation: pulseRing 2s infinite;
 }
 
+
+
+#print-portal {
+  display: none;
+}
+
 @media print {
   @page {
     size: landscape;
@@ -82,64 +88,53 @@ body {
     print-color-adjust: exact !important;
   }
 
-  html, body {
-    height: auto !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    overflow: visible !important;
-    position: static !important;
-    background: #090d16 !important;
-  }
-
-  /* Ocultar cabecera, barras laterales, modales, barras flotantes y barra de estado inferior */
-  header,
-  aside,
-  #drawing-helper-bar,
-  #toast-notification,
-  #splice-modal,
-  #gis-mode-banner,
-  #view-canvas > div.absolute.top-3,
-  #view-canvas > div.h-8 {
+  body.printing-mode > *:not(#print-portal) {
     display: none !important;
   }
 
-  main,
-  #view-canvas,
-  #view-unifilar,
-  #view-budget,
-  #canvas-wrapper,
-  #unifilar-container {
+  body.printing-mode {
     display: block !important;
-    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
     height: auto !important;
     min-height: 0 !important;
     width: 100% !important;
-    max-width: 100% !important;
     overflow: visible !important;
-    transform: none !important;
+    background: #090d16 !important;
   }
 
-  #network-svg {
-    width: 100% !important;
-    height: 540px !important;
-    min-height: 480px !important;
+  body.printing-mode #print-portal {
     display: block !important;
+    width: 100% !important;
+    padding: 8px !important;
+    color: #e2e8f0 !important;
+    background: #090d16 !important;
   }
 
-  #unifilar-container svg {
+  body.printing-mode #print-portal .pdf-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: baseline !important;
+    border-bottom: 1px solid #1e293b !important;
+    padding-bottom: 6px !important;
+    margin-bottom: 10px !important;
+  }
+
+  body.printing-mode #print-portal svg {
     width: 100% !important;
     height: auto !important;
-    min-height: 450px !important;
+    max-height: 76vh !important;
     display: block !important;
   }
 
-  table {
+  body.printing-mode #print-portal table {
     width: 100% !important;
     border-collapse: collapse !important;
+    font-size: 11px !important;
   }
 
-  tr,
-  .bg-slate-900.border.border-slate-800.rounded-xl {
+  body.printing-mode #print-portal tr,
+  body.printing-mode #print-portal .bg-slate-900 {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
