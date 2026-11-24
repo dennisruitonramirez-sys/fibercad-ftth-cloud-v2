@@ -289,10 +289,15 @@ body {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    max-height: 290px !important;
+    max-height: 220px !important;
     overflow-y: auto !important;
     border-left: none !important;
     border-right: none !important;
+  }
+
+  /* Ocultar leyenda TIA-598-C en celular para liberar espacio vertical */
+  #left-sidebar > div:last-child {
+    display: none !important;
   }
 
   #right-sidebar {
@@ -305,53 +310,59 @@ body {
     border-right: none !important;
   }
 
-  /* Compactar la sección inferior del Código TIA-598-C en 1 sola fila de 12 colores */
-  #left-sidebar > div:last-child {
-    padding: 6px 10px !important;
-  }
-
-  #left-sidebar > div:last-child > div:first-child {
-    margin-bottom: 4px !important;
-    font-size: 9px !important;
-  }
-
-  #tia-legend-bar {
-    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
-    gap: 2px !important;
-  }
-
-  #tia-legend-bar > div {
-    height: 15px !important;
-    font-size: 8px !important;
-    border-radius: 3px !important;
-  }
-
   body > div.flex-1 > main {
     width: 100% !important;
-    min-height: 430px !important;
     overflow: visible !important;
   }
 
+  /* Dejar que #view-canvas crezca según sus hijos sin recortar el gráfico */
   #view-canvas {
-    min-height: 430px !important;
-    height: 60vh !important;
+    height: auto !important;
+    min-height: 0 !important;
     width: 100% !important;
+    overflow: visible !important;
   }
 
-  /* Controles flotantes del canvas compactos para no tapar el dibujo */
+  /* Barra de Escala, Longitud y Zoom en flujo normal arriba del gráfico sin taparlo */
   #view-canvas > div:first-child {
     position: static !important;
-    padding: 6px !important;
-    background: #0f172a;
-    border-bottom: 1px solid #1e293b;
+    width: 100% !important;
+    padding: 6px 8px !important;
+    background: #0f172a !important;
+    border-bottom: 1px solid #1e293b !important;
+    gap: 6px !important;
+  }
+
+  #view-canvas > div:first-child > div {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Dar altura fija y completa exclusivamente al área del dibujo CAD */
+  #canvas-wrapper {
+    width: 100% !important;
+    height: 56vh !important;
+    min-height: 360px !important;
+    flex: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
+  #network-svg {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    touch-action: none !important;
   }
 
   /* Barra inferior de estado adaptable */
   #view-canvas > div:last-child {
     height: auto !important;
     min-height: 2rem;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    padding: 4px 8px !important;
     flex-wrap: wrap !important;
     gap: 6px !important;
   }
