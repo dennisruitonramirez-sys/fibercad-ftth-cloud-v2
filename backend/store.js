@@ -198,4 +198,11 @@ async function saveProject(id, payload) {
   }
 }
 
-module.exports = { getProjects, getProjectById, saveProject };
+async function deleteProject(id) {
+  const res = await pool.query(`DELETE FROM projects WHERE id = $1 RETURNING id`, [id]);
+  return res.rowCount > 0;
+}
+
+
+
+module.exports = { getProjects, getProjectById, saveProject, deleteProject };
