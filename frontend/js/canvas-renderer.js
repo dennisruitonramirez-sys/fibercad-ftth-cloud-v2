@@ -194,3 +194,57 @@ function renderGISBackdrop() {
     </g>
   `;
 }
+
+
+(function attachCanvasTouchPan() {
+  let touchPanning = false;
+  let startTouchX = 0;
+  let startTouchY = 0;
+
+  document.addEventListener('touchstart', (e) => {
+    if (document.body.classList.contains('printing-mode')) return;
+    if (e.touches.length !== 1) return;
+
+    const svg = document.getElementById('network-svg');
+    if (!svg || !svg.contains(e.target)) return;
+
+    // Solo desplaza la vista si se toca el fondo/lienzo o si está activa la herramienta mover/pan
+    const isNode = e.target.closest && e.target.closest('.node-group');
+    const isWaypoint = e.target.closest && e.target.closest('.waypoint-handle');
+    const tool = (window.appState && (window.appState.activeTool || window.appState.tool)) || '';
+
+    if ((!isNode && !isWaypoint) || tool === 'pan' || tool === 'move') {
+      touchPanning = true;
+      startTouchX = e.touches[0].clientX;
+      startTouchY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!touchPanning || document.body.classList.contains('printing-mode')) return;
+    if (e.touches.length !== 1 || !window.appState || !window.appState.viewport) return;
+
+    const currX = e.touches[0].clientX;
+    const currY = e.touches[0].clientY;
+    const dx = currX - startTouchX;
+    const dy = currY - startTouchY;
+
+    startTouchX = currX;
+    startTouchY = currY;
+
+    window.appState.viewport.x = Math.round((Number(window.appState.viewport.x) || 0) + dx);
+    window.appState.viewport.y = Math.round((Number(window.appState.viewport.y) || 0) + dy);
+
+    if (typeof renderCanvas === 'function') {
+      const optMap = typeof computeOpticalNetwork === 'function' ? computeOpticalNetwork() : {};
+      renderCanvas(optMap);
+    }
+  }, { passive: true });
+
+  const endTouchPan = () => {
+    touchPanning = false;
+  };
+
+  document.addEventListener('touchend', endTouchPan, { passive: true });
+  document.addEventListener('touchcancel', endTouchPan, { passive: true });
+})();
