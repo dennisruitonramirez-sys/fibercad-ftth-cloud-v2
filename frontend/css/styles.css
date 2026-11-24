@@ -285,15 +285,45 @@ body {
     overflow: visible !important;
   }
 
-  #left-sidebar,
+  #left-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    max-height: 290px !important;
+    overflow-y: auto !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
   #right-sidebar {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    max-height: 230px !important;
+    max-height: 260px !important;
     overflow-y: auto !important;
     border-left: none !important;
     border-right: none !important;
+  }
+
+  /* Compactar la sección inferior del Código TIA-598-C en 1 sola fila de 12 colores */
+  #left-sidebar > div:last-child {
+    padding: 6px 10px !important;
+  }
+
+  #left-sidebar > div:last-child > div:first-child {
+    margin-bottom: 4px !important;
+    font-size: 9px !important;
+  }
+
+  #tia-legend-bar {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+  }
+
+  #tia-legend-bar > div {
+    height: 15px !important;
+    font-size: 8px !important;
+    border-radius: 3px !important;
   }
 
   body > div.flex-1 > main {
