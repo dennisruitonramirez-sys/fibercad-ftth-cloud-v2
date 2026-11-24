@@ -79,7 +79,12 @@
         <i class="fa-solid fa-cloud-arrow-up"></i>
         <span class="hidden md:inline">Guardar Nube</span>
       </button>
-      
+      <button onclick="deleteCurrentProject()"
+              class="px-2.5 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 text-xs font-medium flex items-center gap-1.5 transition"
+              title="Eliminar proyecto actual de la nube">
+        <i class="fa-solid fa-trash-can"></i>
+        <span class="hidden lg:inline">Borrar Proyecto</span>
+      </button>
       <div class="h-5 w-px bg-slate-800 mx-0.5"></div>
 
       <button onclick="exportProjectJSON()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition" title="Exportar Proyecto (.JSON)">
