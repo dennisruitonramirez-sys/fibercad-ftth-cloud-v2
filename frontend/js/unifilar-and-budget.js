@@ -196,7 +196,7 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
   `).join('');
 
   container.innerHTML = `
-    <svg width="${svgW}" height="${svgH}" class="mx-auto">
+    <svg width="${svgW}" height="${svgH}" class="mx-auto" style="touch-action: pan-x pan-y;">
       ${headersHtml}
       ${linesHtml}
       ${badgesHtml}
