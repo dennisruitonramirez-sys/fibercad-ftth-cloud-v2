@@ -82,14 +82,65 @@ body {
     print-color-adjust: exact !important;
   }
 
-  body, #view-canvas, #view-unifilar, #view-budget, main {
+  html, body {
     height: auto !important;
+    min-height: 0 !important;
     width: 100% !important;
     overflow: visible !important;
     position: static !important;
+    background: #090d16 !important;
   }
 
-  header, aside, #drawing-helper-bar, #toast-notification, #splice-modal {
+  /* Ocultar cabecera, barras laterales, modales, barras flotantes y barra de estado inferior */
+  header,
+  aside,
+  #drawing-helper-bar,
+  #toast-notification,
+  #splice-modal,
+  #gis-mode-banner,
+  #view-canvas > div.absolute.top-3,
+  #view-canvas > div.h-8 {
     display: none !important;
+  }
+
+  main,
+  #view-canvas,
+  #view-unifilar,
+  #view-budget,
+  #canvas-wrapper,
+  #unifilar-container {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  #network-svg {
+    width: 100% !important;
+    height: 540px !important;
+    min-height: 480px !important;
+    display: block !important;
+  }
+
+  #unifilar-container svg {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 450px !important;
+    display: block !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr,
+  .bg-slate-900.border.border-slate-800.rounded-xl {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 }
