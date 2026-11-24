@@ -340,6 +340,30 @@ function importProjectJSON(event) {
   reader.readAsText(file);
 }
 
+function normalizeSvgForLightPrint(svgEl) {
+  if (!svgEl) return;
+
+  const lightColors = new Set([
+    '#fff', '#ffffff', '#f8fafc', '#f1f5f9', '#e2e8f0',
+    '#cbd5e1', '#94a3b8', '#64748b', 'white', 'rgb(255, 255, 255)',
+    'rgb(226, 232, 240)', 'rgb(203, 213, 225)', 'rgb(148, 163, 184)'
+  ]);
+
+  svgEl.querySelectorAll('text, tspan').forEach(el => {
+    const fill = (el.getAttribute('fill') || '').trim().toLowerCase();
+    if (!fill || lightColors.has(fill)) {
+      el.setAttribute('fill', '#0f172a');
+    }
+  });
+
+  svgEl.querySelectorAll('rect, path, line, polygon').forEach(el => {
+    const fill = (el.getAttribute('fill') || '').trim().toLowerCase();
+    if (fill === '#090d16' || fill === '#0b1120' || fill === '#020617' || fill === '#0f172a') {
+      el.setAttribute('fill', '#f8fafc');
+    }
+  });
+}  //función para pdf no se pierda los colores cuando el fondo se haga blanco
+
 function exportSpecificPDF(kind = 'cad') {
   const projectTitle = appState.projectName || 'Proyecto FTTH';
   const nowStr = new Date().toLocaleString();
@@ -384,8 +408,10 @@ function exportSpecificPDF(kind = 'cad') {
       const maxY = Math.max(...ys) + 140;
       clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${Math.max(800, maxX - minX)} ${Math.max(500, maxY - minY)}`);
     }
+
     clonedSvg.removeAttribute('width');
     clonedSvg.removeAttribute('height');
+    normalizeSvgForLightPrint(clonedSvg);
     contentHtml = clonedSvg.outerHTML;
 
   } else if (kind === 'unifilar') {
@@ -403,8 +429,10 @@ function exportSpecificPDF(kind = 'cad') {
       const h = Number(clonedUnifilar.getAttribute('height')) || 600;
       clonedUnifilar.setAttribute('viewBox', `0 0 ${w} ${h}`);
     }
+
     clonedUnifilar.removeAttribute('width');
     clonedUnifilar.removeAttribute('height');
+    normalizeSvgForLightPrint(clonedUnifilar);
     contentHtml = clonedUnifilar.outerHTML;
 
   } else if (kind === 'budget') {
@@ -427,7 +455,6 @@ function exportSpecificPDF(kind = 'cad') {
       existingCloneHtml = tempClone.innerHTML;
     }
 
-    // Metrado consolidado de cables y nodos como respaldo/complemento garantizado
     const cableRows = (appState.cables || []).map(c => {
       const routeM = typeof calculateCableRouteMeters === 'function'
         ? Math.round(calculateCableRouteMeters(c))
@@ -466,7 +493,7 @@ function exportSpecificPDF(kind = 'cad') {
 
     const fallbackSummaryHtml = `
       <div class="bom-fallback-section" style="margin-top:16px;">
-        <h2 style="margin:12px 0 6px;font-size:13px;color:#38bdf8;">Metrado de Cables y Reservas</h2>
+        <h2 style="margin:12px 0 6px;font-size:13px;">Metrado de Cables y Reservas</h2>
         <table>
           <thead>
             <tr>
@@ -483,7 +510,7 @@ function exportSpecificPDF(kind = 'cad') {
           </tbody>
         </table>
 
-        <h2 style="margin:14px 0 6px;font-size:13px;color:#38bdf8;">Resumen de Elementos y Fusiones</h2>
+        <h2 style="margin:14px 0 6px;font-size:13px;">Resumen de Elementos y Fusiones</h2>
         <table>
           <thead>
             <tr>
@@ -506,11 +533,7 @@ function exportSpecificPDF(kind = 'cad') {
       </div>
     `;
 
-    // Si el clon ya tiene tablas con filas, usamos el clon; si no, inyectamos el metrado completo
-    const clonedHasTables = existingCloneHtml && /<tbody[^>]*>[\s\S]*?<tr/i.test(existingCloneHtml);
-    contentHtml = clonedHasTables
-      ? `${existingCloneHtml}${fallbackSummaryHtml}`
-      : `${existingCloneHtml}${fallbackSummaryHtml}`;
+    contentHtml = `${existingCloneHtml}${fallbackSummaryHtml}`;
   }
 
   let portal = document.getElementById('print-portal');
@@ -522,8 +545,8 @@ function exportSpecificPDF(kind = 'cad') {
 
   portal.innerHTML = `
     <div class="pdf-header">
-      <h1 style="margin:0;font-size:15px;color:#38bdf8;">${docTitle}</h1>
-      <span style="font-size:11px;color:#94a3b8;">${nowStr}</span>
+      <h1 style="margin:0;font-size:15px;">${docTitle}</h1>
+      <span style="font-size:11px;">${nowStr}</span>
     </div>
     <div>${contentHtml}</div>
   `;
@@ -537,7 +560,7 @@ function exportSpecificPDF(kind = 'cad') {
   window.addEventListener('afterprint', cleanup);
   document.body.classList.add('printing-mode');
   setTimeout(() => window.print(), 120);
-}
+} //funcion para generar pdf
 
 let toastTimer = null;
 function showToast(msg, type = 'success') {
