@@ -409,14 +409,31 @@ function exportSpecificPDF(kind = 'cad') {
 
   } else if (kind === 'budget') {
     docTitle = `Presupuesto Óptico y Metrado BOM — ${projectTitle}`;
-    renderBudgetAndBOM();
-    const budgetContainer = document.querySelector('#view-budget > div') || document.getElementById('view-budget');
-    if (!budgetContainer) {
+    if (typeof computeOpticalNetwork === 'function') {
+      renderBudgetAndBOM(computeOpticalNetwork());
+    } else {
+      renderBudgetAndBOM();
+    }
+
+    const budgetView = document.getElementById('view-budget');
+    if (!budgetView) {
       showToast('No se pudo generar el Presupuesto y BOM', 'warning');
       return;
     }
 
-    const clonedBudget = budgetContainer.cloneNode(true);
+    const clonedBudget = budgetView.cloneNode(true);
+    clonedBudget.classList.remove('hidden', 'flex', 'overflow-hidden', 'overflow-auto', 'h-full');
+    clonedBudget.style.display = 'block';
+    clonedBudget.style.height = 'auto';
+    clonedBudget.style.maxHeight = 'none';
+    clonedBudget.style.overflow = 'visible';
+
+    clonedBudget.querySelectorAll('*').forEach(el => {
+      el.classList.remove('hidden', 'overflow-hidden', 'overflow-auto', 'overflow-y-auto', 'overflow-x-auto', 'h-full', 'max-h-screen');
+      el.style.maxHeight = 'none';
+      el.style.overflow = 'visible';
+    });
+
     clonedBudget.querySelectorAll('button').forEach(btn => btn.remove());
     contentHtml = clonedBudget.innerHTML;
   }
