@@ -344,11 +344,10 @@ function exportSpecificPDF(kind = 'cad') {
   const projectTitle = appState.projectName || 'Proyecto FTTH';
   const nowStr = new Date().toLocaleString();
 
-  let docTitle = 'Plano CAD FTTH';
-  let bodyContent = '';
+  let docTitle = `Plano CAD FTTH — ${projectTitle}`;
+  let contentHtml = '';
 
   if (kind === 'cad') {
-    docTitle = `Plano CAD FTTH — ${projectTitle}`;
     const netSvg = document.getElementById('network-svg');
     if (!netSvg) {
       showToast('No se encontró el SVG del Plano CAD', 'warning');
@@ -356,7 +355,6 @@ function exportSpecificPDF(kind = 'cad') {
     }
 
     const clonedSvg = netSvg.cloneNode(true);
-    // Quitar transformaciones de pan/zoom del viewport para encuadrar toda la red
     const vpGroup = clonedSvg.querySelector('#viewport-group') || clonedSvg.firstElementChild;
     if (vpGroup && vpGroup.tagName.toLowerCase() === 'g') {
       vpGroup.removeAttribute('transform');
@@ -384,18 +382,11 @@ function exportSpecificPDF(kind = 'cad') {
       const minY = Math.min(...ys) - 120;
       const maxX = Math.max(...xs) + 160;
       const maxY = Math.max(...ys) + 140;
-      const w = Math.max(800, maxX - minX);
-      const h = Math.max(500, maxY - minY);
-      clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${w} ${h}`);
+      clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${Math.max(800, maxX - minX)} ${Math.max(500, maxY - minY)}`);
     }
     clonedSvg.removeAttribute('width');
     clonedSvg.removeAttribute('height');
-    clonedSvg.style.width = '100%';
-    clonedSvg.style.height = 'auto';
-    clonedSvg.style.maxHeight = '78vh';
-    clonedSvg.style.display = 'block';
-
-    bodyContent = `<div class="svg-box">${clonedSvg.outerHTML}</div>`;
+    contentHtml = clonedSvg.outerHTML;
 
   } else if (kind === 'unifilar') {
     docTitle = `Diagrama Unifilar FTTH — ${projectTitle}`;
@@ -407,29 +398,14 @@ function exportSpecificPDF(kind = 'cad') {
     }
 
     const clonedUnifilar = unifilarSvg.cloneNode(true);
-    const vb = clonedUnifilar.getAttribute('viewBox');
-    let w = 1200;
-    let h = 600;
-    if (vb) {
-      const parts = vb.trim().split(/\s+/).map(Number);
-      if (parts.length === 4 && parts.every(n => !Number.isNaN(n))) {
-        w = parts[2] || w;
-        h = parts[3] || h;
-      }
-    } else {
-      w = Number(clonedUnifilar.getAttribute('width')) || 1200;
-      h = Number(clonedUnifilar.getAttribute('height')) || 600;
+    if (!clonedUnifilar.getAttribute('viewBox')) {
+      const w = Number(clonedUnifilar.getAttribute('width')) || 1200;
+      const h = Number(clonedUnifilar.getAttribute('height')) || 600;
       clonedUnifilar.setAttribute('viewBox', `0 0 ${w} ${h}`);
     }
-
     clonedUnifilar.removeAttribute('width');
     clonedUnifilar.removeAttribute('height');
-    clonedUnifilar.style.width = '100%';
-    clonedUnifilar.style.height = 'auto';
-    clonedUnifilar.style.maxHeight = '78vh';
-    clonedUnifilar.style.display = 'block';
-
-    bodyContent = `<div class="svg-box">${clonedUnifilar.outerHTML}</div>`;
+    contentHtml = clonedUnifilar.outerHTML;
 
   } else if (kind === 'budget') {
     docTitle = `Presupuesto Óptico y Metrado BOM — ${projectTitle}`;
@@ -442,123 +418,33 @@ function exportSpecificPDF(kind = 'cad') {
 
     const clonedBudget = budgetContainer.cloneNode(true);
     clonedBudget.querySelectorAll('button').forEach(btn => btn.remove());
-    bodyContent = `<div class="budget-box">${clonedBudget.innerHTML}</div>`;
+    contentHtml = clonedBudget.innerHTML;
   }
 
-  const printWin = window.open('', '_blank', 'width=1100,height=780');
-  if (!printWin) {
-    showToast('Permite las ventanas emergentes para generar el PDF', 'warning');
-    return;
+  let portal = document.getElementById('print-portal');
+  if (!portal) {
+    portal = document.createElement('div');
+    portal.id = 'print-portal';
+    document.body.appendChild(portal);
   }
 
-  printWin.document.open();
-  printWin.document.write(`
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-      <meta charset="UTF-8" />
-      <title>${docTitle}</title>
-      <style>
-        @page {
-          size: landscape;
-          margin: 8mm;
-        }
-        * {
-          box-sizing: border-box;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-        body {
-          margin: 0;
-          padding: 12px;
-          background: #090d16;
-          color: #e2e8f0;
-          font-family: system-ui, -apple-system, sans-serif;
-        }
-        .pdf-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: baseline;
-          border-bottom: 1px solid #1e293b;
-          padding-bottom: 8px;
-          margin-bottom: 12px;
-        }
-        .pdf-header h1 {
-          margin: 0;
-          font-size: 16px;
-          color: #38bdf8;
-        }
-        .pdf-header span {
-          font-size: 11px;
-          color: #94a3b8;
-        }
-        .svg-box {
-          width: 100%;
-          background: #0b1120;
-          border: 1px solid #1e293b;
-          border-radius: 8px;
-          padding: 8px;
-        }
-        .budget-box table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 8px;
-          font-size: 12px;
-        }
-        .budget-box th, .budget-box td {
-          border: 1px solid #334155;
-          padding: 6px 8px;
-          text-align: left;
-        }
-        .budget-box tr {
-          break-inside: avoid;
-          page-break-inside: avoid;
-        }
-        .print-actions {
-          margin-bottom: 10px;
-          display: flex;
-          gap: 8px;
-        }
-        .print-actions button {
-          padding: 6px 12px;
-          border-radius: 6px;
-          border: 1px solid #0284c7;
-          background: #0369a1;
-          color: #fff;
-          cursor: pointer;
-          font-size: 12px;
-        }
-        @media print {
-          .print-actions {
-            display: none !important;
-          }
-          body {
-            padding: 0;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="print-actions">
-        <button onclick="window.print()">Guardar / Imprimir PDF</button>
-        <button onclick="window.close()" style="background:#1e293b;border-color:#475569;">Cerrar</button>
-      </div>
-      <div class="pdf-header">
-        <h1>${docTitle}</h1>
-        <span>Generado: ${nowStr}</span>
-      </div>
-      ${bodyContent}
-      <script>
-        window.onload = function () {
-          setTimeout(function () {
-            window.print();
-          }, 250);
-        };
-      <\/script>
-    </body>
-    </html>
-  `);
-  printWin.document.close();
+  portal.innerHTML = `
+    <div class="pdf-header">
+      <h1 style="margin:0;font-size:15px;color:#38bdf8;">${docTitle}</h1>
+      <span style="font-size:11px;color:#94a3b8;">${nowStr}</span>
+    </div>
+    <div>${contentHtml}</div>
+  `;
+
+  const cleanup = () => {
+    document.body.classList.remove('printing-mode');
+    if (portal) portal.innerHTML = '';
+    window.removeEventListener('afterprint', cleanup);
+  };
+
+  window.addEventListener('afterprint', cleanup);
+  document.body.classList.add('printing-mode');
+  setTimeout(() => window.print(), 120);
 }
 
 let toastTimer = null;
