@@ -240,53 +240,47 @@ body {
   }
 }
 
-@media screen and (max-width: 768px) {
-  body {
-    overflow-x: hidden;
-  }
-
-  /* Apilar los bloques principales en columna en pantallas pequeñas */
-  #view-canvas,
-  #canvas-workspace,
-  .main-workspace,
-  .editor-layout {
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 0 !important;
-  }
-
-  /* Hacer que la barra superior envuelva sin encimarse */
+@media screen {
   header,
-  .top-header,
-  nav {
+  nav,
+  [class*="topbar"],
+  [class*="header"] {
     flex-wrap: wrap !important;
-    height: auto !important;
+    max-width: 100% !important;
+    overflow-x: clip !important;
     gap: 6px !important;
   }
 
-  /* Evitar anchos fijos en barras laterales y permitir que ocupen todo el ancho disponible */
-  aside,
-  #left-sidebar,
-  #right-sidebar,
-  [id*="sidebar"],
-  [id*="inspector"] {
-    width: 100% !important;
+  header button,
+  nav button,
+  header select,
+  nav select {
     max-width: 100% !important;
-    min-width: 0 !important;
-    flex: none !important;
-    position: static !important;
-    height: auto !important;
-    max-height: 36vh !important;
-    overflow-y: auto !important;
+    flex-shrink: 1 !important;
   }
 
-  /* Dar altura y desplazamiento táctil al área de trabajo del plano */
   #network-svg,
-  #unifilar-container {
-    width: 100% !important;
-    min-height: 320px !important;
+  #unifilar-container,
+  [id*="canvas"] {
+    max-width: 100%;
     touch-action: pan-x pan-y;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  aside,
+  #right-sidebar,
+  [id*="inspector"] {
+    max-width: 45vw !important;
+    min-width: 0 !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  aside,
+  #right-sidebar,
+  [id*="inspector"] {
+    max-width: 100% !important;
+    width: 100% !important;
   }
 }
