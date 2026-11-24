@@ -239,48 +239,54 @@ body {
     page-break-inside: avoid !important;
   }
 }
+@media screen and (max-width: 640px) {
+  body {
+    overflow-x: hidden !important;
+  }
 
-@media screen {
+  /* Evitar que la barra superior y sus menús/selects se amontonen o desborden */
   header,
   nav,
-  [class*="topbar"],
-  [class*="header"] {
-    flex-wrap: wrap !important;
+  header > div,
+  nav > div {
     max-width: 100% !important;
-    overflow-x: clip !important;
+    flex-wrap: wrap !important;
     gap: 6px !important;
   }
 
-  header button,
-  nav button,
   header select,
-  nav select {
+  nav select,
+  header button,
+  nav button {
     max-width: 100% !important;
-    flex-shrink: 1 !important;
-  }
-
-  #network-svg,
-  #unifilar-container,
-  [id*="canvas"] {
-    max-width: 100%;
-    touch-action: pan-x pan-y;
-  }
-}
-
-@media screen and (max-width: 1024px) {
-  aside,
-  #right-sidebar,
-  [id*="inspector"] {
-    max-width: 45vw !important;
     min-width: 0 !important;
   }
-}
 
-@media screen and (max-width: 768px) {
-  aside,
-  #right-sidebar,
-  [id*="inspector"] {
-    max-width: 100% !important;
+  /* Hacer que el área de diseño sea visible y desplazable en pantalla estrecha */
+  #view-canvas,
+  #canvas-container,
+  #canvas-wrapper,
+  [id*="canvas"] {
+    display: block !important;
     width: 100% !important;
+    min-height: 300px !important;
+    height: 45vh !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #network-svg {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 280px !important;
+    touch-action: pan-x pan-y !important;
+  }
+
+  /* Limitar altura del panel izquierdo para que el área de diseño también se vea */
+  aside,
+  #left-sidebar,
+  [id*="sidebar"] {
+    max-height: 32vh !important;
+    overflow-y: auto !important;
   }
 }
