@@ -360,3 +360,14 @@ function showToast(msg, type = 'success') {
     toast.classList.add('translate-y-20', 'opacity-0');
   }, 3200);
 }
+
+async function deleteCurrentProject() {
+  const idToDelete = appState.projectId;
+  if (!idToDelete) {
+    showToast('No hay un proyecto guardado seleccionado para borrar', 'info');
+    return;
+  }
+  const confirmed = window.confirm(`¿Seguro que deseas borrar el proyecto "${appState.projectName}" de la nube? Esta acción no se puede deshacer.`);
+  if (!confirmed) return;
+  await FiberApiClient.deleteProjectFromServer(idToDelete);
+}
