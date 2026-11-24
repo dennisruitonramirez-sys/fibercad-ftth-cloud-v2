@@ -240,66 +240,53 @@ body {
   }
 }
 
-/* Adaptación responsive para celular, tablet y dispositivos táctiles (fuera de impresión) */
-@media screen {
-  html,
+@media screen and (max-width: 768px) {
   body {
-    max-width: 100vw;
     overflow-x: hidden;
-    -webkit-text-size-adjust: 100%;
   }
 
-  #unifilar-container,
-  .table-responsive,
-  .overflow-x-auto {
-    overflow-x: auto !important;
+  /* Apilar los bloques principales en columna en pantallas pequeñas */
+  #view-canvas,
+  #canvas-workspace,
+  .main-workspace,
+  .editor-layout {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* Hacer que la barra superior envuelva sin encimarse */
+  header,
+  .top-header,
+  nav {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    gap: 6px !important;
+  }
+
+  /* Evitar anchos fijos en barras laterales y permitir que ocupen todo el ancho disponible */
+  aside,
+  #left-sidebar,
+  #right-sidebar,
+  [id*="sidebar"],
+  [id*="inspector"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    position: static !important;
+    height: auto !important;
+    max-height: 36vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Dar altura y desplazamiento táctil al área de trabajo del plano */
+  #network-svg,
+  #unifilar-container {
+    width: 100% !important;
+    min-height: 320px !important;
+    touch-action: pan-x pan-y;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
-    max-width: 100%;
-  }
-
-  button,
-  select,
-  input[type="button"],
-  input[type="submit"],
-  .btn-touch {
-    touch-action: manipulation;
-  }
-}
-
-/* Tablets y pantallas medianas (hasta 1024px) */
-@media screen and (max-width: 1024px) {
-  .grid,
-  .flex-row-responsive {
-    flex-wrap: wrap;
-  }
-
-  #engineering-kpi-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-/* Celulares (hasta 640px) */
-@media screen and (max-width: 640px) {
-  body {
-    font-size: 14px;
-  }
-
-  #engineering-kpi-cards {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
-  button,
-  select {
-    min-height: 40px;
-  }
-
-  table {
-    font-size: 12px;
-  }
-
-  th,
-  td {
-    padding: 6px 8px !important;
   }
 }
