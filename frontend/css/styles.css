@@ -71,16 +71,6 @@ body {
   animation: pulseRing 2s infinite;
 }
 
-
-
-#print-portal {
-  display: none;
-}
-
-#print-portal {
-  display: none;
-}
-
 #print-portal {
   display: none;
 }
@@ -242,26 +232,109 @@ body {
 
 /* ===== AJUSTE RESPONSIVE SEGURO (CELULAR Y TABLET) ===== */
 @media screen and (max-width: 1024px) {
-  /* Barra superior: permitir desplazamiento horizontal limpio sin deformar ni encimar botones */
-  header {
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-    flex-wrap: nowrap !important;
+  body {
+    overflow-x: hidden;
   }
 
-  header > * {
+  /* Barra superior: deslizamiento horizontal limpio sin encimar botones */
+  body > header {
+    height: auto !important;
+    min-height: 3.5rem;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body > header > div,
+  body > header > nav {
     flex-shrink: 0 !important;
   }
 
-  /* Evitar que el lienzo se quede sin espacio en tablet */
+  /* En tablet, ajustar anchos laterales para dar aire al lienzo CAD */
   #left-sidebar {
-    width: 220px !important;
-    min-width: 220px !important;
+    width: 215px !important;
+    min-width: 215px !important;
   }
 
   #right-sidebar {
-    width: 250px !important;
-    min-width: 250px !important;
+    width: 245px !important;
+    min-width: 245px !important;
+  }
+
+  /* Capturar gestos táctiles dentro del plano CAD en tablet y celular */
+  #canvas-wrapper,
+  #network-svg {
+    touch-action: none !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  body.h-screen {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Apilar panel izquierdo, lienzo central e inspector en columna */
+  body > div.flex-1 {
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  #left-sidebar,
+  #right-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    max-height: 230px !important;
+    overflow-y: auto !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  body > div.flex-1 > main {
+    width: 100% !important;
+    min-height: 430px !important;
+    overflow: visible !important;
+  }
+
+  #view-canvas {
+    min-height: 430px !important;
+    height: 60vh !important;
+    width: 100% !important;
+  }
+
+  /* Controles flotantes del canvas compactos para no tapar el dibujo */
+  #view-canvas > div:first-child {
+    position: static !important;
+    padding: 6px !important;
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+  }
+
+  /* Barra inferior de estado adaptable */
+  #view-canvas > div:last-child {
+    height: auto !important;
+    min-height: 2rem;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* Modal de fusiones adaptable a celular */
+  #splice-workspace {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+
+  #splice-workspace > div:first-child,
+  #splice-workspace > div:last-child {
+    width: 100% !important;
+    max-height: 180px !important;
   }
 }
