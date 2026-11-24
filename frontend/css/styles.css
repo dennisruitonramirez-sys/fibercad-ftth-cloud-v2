@@ -81,6 +81,10 @@ body {
   display: none;
 }
 
+#print-portal {
+  display: none;
+}
+
 @media print {
   @page {
     size: landscape;
@@ -88,6 +92,7 @@ body {
   }
 
   * {
+    box-sizing: border-box !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -104,7 +109,8 @@ body {
     min-height: 0 !important;
     width: 100% !important;
     overflow: visible !important;
-    background: #090d16 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 
   body.printing-mode #print-portal {
@@ -116,8 +122,8 @@ body {
     overflow: visible !important;
     position: static !important;
     padding: 6px !important;
-    background: #090d16 !important;
-    color: #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 
   body.printing-mode #print-portal * {
@@ -130,35 +136,78 @@ body {
     display: flex !important;
     justify-content: space-between !important;
     align-items: baseline !important;
-    border-bottom: 1px solid #1e293b !important;
+    border-bottom: 2px solid #cbd5e1 !important;
     padding-bottom: 6px !important;
     margin-bottom: 10px !important;
   }
 
+  body.printing-mode #print-portal .pdf-header h1 {
+    color: #0f172a !important;
+  }
+
+  body.printing-mode #print-portal .pdf-header span {
+    color: #475569 !important;
+  }
+
+  /* Diagramas SVG en modo impresión claro */
   body.printing-mode #print-portal svg {
     width: 100% !important;
     height: auto !important;
     max-height: 76vh !important;
     display: block !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 6px !important;
   }
 
+  /* Tarjetas y secciones del Presupuesto / BOM en fondo blanco */
   body.printing-mode #print-portal .grid {
     display: grid !important;
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     gap: 10px !important;
   }
 
+  body.printing-mode #print-portal .bg-slate-900,
+  body.printing-mode #print-portal .bg-slate-950,
+  body.printing-mode #print-portal .bg-slate-850,
+  body.printing-mode #print-portal [class*="bg-slate-"] {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  body.printing-mode #print-portal h2,
+  body.printing-mode #print-portal h3,
+  body.printing-mode #print-portal p,
+  body.printing-mode #print-portal span,
+  body.printing-mode #print-portal div {
+    color: #0f172a !important;
+  }
+
+  /* Tablas del BOM / Presupuesto */
   body.printing-mode #print-portal table {
     width: 100% !important;
     border-collapse: collapse !important;
     margin-top: 8px !important;
     margin-bottom: 14px !important;
     font-size: 11px !important;
+    background: #ffffff !important;
   }
 
-  body.printing-mode #print-portal th,
+  body.printing-mode #print-portal thead,
+  body.printing-mode #print-portal th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    border: 1px solid #94a3b8 !important;
+    padding: 6px 8px !important;
+    text-align: left !important;
+  }
+
   body.printing-mode #print-portal td {
-    border: 1px solid #334155 !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
     padding: 5px 8px !important;
     text-align: left !important;
   }
