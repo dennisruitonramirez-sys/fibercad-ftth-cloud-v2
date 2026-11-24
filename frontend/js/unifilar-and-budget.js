@@ -17,10 +17,10 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     columns[r].push(n);
   });
 
-  const colWidth = 310;
-  const rowHeight = 155;
+  const colWidth = 360;
+  const rowHeight = 165;
   const startX = 60;
-  const startY = 65;
+  const startY = 70;
 
   const nodePositions = {};
   let maxRows = 1;
@@ -35,49 +35,47 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     });
   });
 
-  // Agrupar cables por nodo origen y por nodo destino para separar carriles y etiquetas
-  const cablesByOrigin = {};
-  const cablesByTarget = {};
+  // Agrupar cables por par de columnas (origen -> destino) para dar a cada cable su propio carril X
+  const cablesBySpan = {};
   appState.cables.forEach(cab => {
-    if (!cablesByOrigin[cab.fromNodeId]) cablesByOrigin[cab.fromNodeId] = [];
-    cablesByOrigin[cab.fromNodeId].push(cab);
-
-    if (!cablesByTarget[cab.toNodeId]) cablesByTarget[cab.toNodeId] = [];
-    cablesByTarget[cab.toNodeId].push(cab);
+    const p1 = nodePositions[cab.fromNodeId];
+    const p2 = nodePositions[cab.toNodeId];
+    if (!p1 || !p2) return;
+    const spanKey = `${Math.round(p1.x)}->${Math.round(p2.x)}`;
+    if (!cablesBySpan[spanKey]) cablesBySpan[spanKey] = [];
+    cablesBySpan[spanKey].push(cab);
   });
 
   const dropPalette = ['#059669', '#0284c7', '#7c3aed', '#d97706', '#db2777', '#0d9488'];
-  let extraLaneSpan = 0;
-  const placedBadgeBoxes = [];
   const linePathsList = [];
   const badgeItemsList = [];
+  const placedBadgeBoxes = [];
+  let maxSpanWidth = colWidth;
 
   appState.cables.forEach(cab => {
     const p1 = nodePositions[cab.fromNodeId];
     const p2 = nodePositions[cab.toNodeId];
     if (!p1 || !p2) return;
 
-    const siblings = cablesByOrigin[cab.fromNodeId] || [cab];
-    const laneIndex = siblings.indexOf(cab);
-    const totalLanes = siblings.length;
+    const spanKey = `${Math.round(p1.x)}->${Math.round(p2.x)}`;
+    const spanCables = cablesBySpan[spanKey] || [cab];
+    const idxInSpan = spanCables.indexOf(cab);
+    const totalInSpan = spanCables.length;
 
-    const incomingSiblings = cablesByTarget[cab.toNodeId] || [cab];
-    const inIndex = incomingSiblings.indexOf(cab);
-    const inTotal = incomingSiblings.length;
-
-    const laneStepX = 24;
-    const laneStepY = 8;
-    const centerShift = laneIndex - (totalLanes - 1) / 2;
-    const inShift = inIndex - (inTotal - 1) / 2;
-    extraLaneSpan = Math.max(extraLaneSpan, Math.abs(centerShift) * laneStepX);
-
+    // Salida y llegada escalonadas en Y para no coincidir en el mismo punto del borde
+    const yStep = 10;
+    const yShift = idxInSpan - (totalInSpan - 1) / 2;
     const x1 = p1.x + 170;
-    const y1 = p1.y + 38 + centerShift * laneStepY;
+    const y1 = p1.y + 38 + yShift * yStep;
     const x2 = p2.x;
-    const y2 = p2.y + 38 + inShift * laneStepY;
+    const y2 = p2.y + 38 + yShift * yStep;
 
-    const baseMidX = x1 + (x2 - x1) * 0.42;
-    const midX = Math.min(x2 - 85, Math.max(x1 + 35, baseMidX + centerShift * laneStepX));
+    // Cada cable del mismo tramo obtiene su propio carril vertical X bien separado
+    const availableGap = Math.max(140, x2 - x1 - 40);
+    const laneSpacing = Math.max(28, Math.min(44, availableGap / Math.max(1, totalInSpan)));
+    const startLaneX = x1 + 28;
+    const laneX = Math.min(x2 - 28, startLaneX + idxInSpan * laneSpacing);
+    maxSpanWidth = Math.max(maxSpanWidth, (laneX - p1.x) + 190);
 
     const routeM = calculateCableRouteMeters(cab);
     const totalM = routeM + Number(cab.reserveMeters || 0);
@@ -86,39 +84,46 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     if (cab.type === 'troncal') {
       color = '#7c3aed';
     } else if (cab.type === 'drop') {
-      color = dropPalette[laneIndex % dropPalette.length];
+      color = dropPalette[idxInSpan % dropPalette.length];
     }
 
     linePathsList.push(`
-      <path d="M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}"
+      <path d="M ${x1} ${y1} L ${laneX} ${y1} L ${laneX} ${y2} L ${x2} ${y2}"
             fill="none" stroke="${color}" stroke-width="2.2" />
     `);
 
-    // Ubicar la etiqueta en el tramo final cercano a x2 sin tocar el nodo ni otras etiquetas
-    const badgeW = 84;
+    // Colocar la etiqueta en el tramo horizontal de llegada a la derecha de laneX y antes de x2
+    const badgeW = 82;
     const badgeH = 20;
-    const labelCenterX = x2 - 52;
-    let labelCenterY = y2 - 16;
+    const rightSegmentStart = laneX + 12;
+    const rightSegmentEnd = x2 - 8;
+    let labelCenterX = (rightSegmentStart + rightSegmentEnd) / 2;
 
+    // Si el tramo a la derecha de laneX es muy estrecho, centrar entre laneX y x2
+    if (rightSegmentEnd - rightSegmentStart < badgeW + 8) {
+      labelCenterX = Math.min(x2 - badgeW / 2 - 4, Math.max(x1 + badgeW / 2 + 4, (laneX + x2) / 2));
+    }
+
+    let labelCenterY = y2 - 16;
     const overlaps = (cx, cy) => {
       const left = cx - badgeW / 2;
       const right = cx + badgeW / 2;
       const top = cy - badgeH / 2;
       const bottom = cy + badgeH / 2;
 
-      const hitsTargetNode =
+      const hitsNode =
         right + 4 > p2.x &&
         left - 4 < p2.x + 170 &&
-        bottom + 3 > p2.y &&
-        top - 3 < p2.y + 76;
+        bottom + 4 > p2.y &&
+        top - 4 < p2.y + 76;
 
-      if (hitsTargetNode) return true;
+      if (hitsNode) return true;
 
       return placedBadgeBoxes.some(b =>
-        right + 4 > b.left &&
-        left - 4 < b.right &&
-        bottom + 4 > b.top &&
-        top - 4 < b.bottom
+        right + 6 > b.left &&
+        left - 6 < b.right &&
+        bottom + 5 > b.top &&
+        top - 5 < b.bottom
       );
     };
 
@@ -154,8 +159,8 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
   const linesHtml = linePathsList.join('');
   const badgesHtml = badgeItemsList.join('');
 
-  const svgW = Math.max(1200, startX * 2 + 5 * colWidth + extraLaneSpan * 2);
-  const svgH = Math.max(540, startY * 2 + maxRows * rowHeight);
+  const svgW = Math.max(1300, startX * 2 + 4 * colWidth + maxSpanWidth);
+  const svgH = Math.max(560, startY * 2 + maxRows * rowHeight);
 
   const blocksHtml = appState.nodes.map(n => {
     const pos = nodePositions[n.id];
