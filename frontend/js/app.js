@@ -340,6 +340,16 @@ function importProjectJSON(event) {
   reader.readAsText(file);
 }
 
+function exportActiveViewPDF() {
+  if (!document.getElementById('view-unifilar').classList.contains('hidden')) {
+    renderSingleLineDiagram();
+  } else if (!document.getElementById('view-budget').classList.contains('hidden')) {
+    renderBudgetAndBOM();
+  }
+  showToast('Selecciona "Guardar como PDF" y orientación horizontal en el diálogo', 'info');
+  setTimeout(() => window.print(), 150);
+}
+
 let toastTimer = null;
 function showToast(msg, type = 'success') {
   const toast = document.getElementById('toast-notification');
