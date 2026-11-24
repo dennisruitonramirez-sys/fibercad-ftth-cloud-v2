@@ -17,10 +17,10 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     columns[r].push(n);
   });
 
-  const colWidth = 300;
-  const rowHeight = 145;
+  const colWidth = 310;
+  const rowHeight = 155;
   const startX = 60;
-  const startY = 60;
+  const startY = 65;
 
   const nodePositions = {};
   let maxRows = 1;
@@ -35,65 +35,124 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     });
   });
 
-  // Agrupar cables por nodo origen para asignar carriles separados y evitar superposición
+  // Agrupar cables por nodo origen y por nodo destino para separar carriles y etiquetas
   const cablesByOrigin = {};
+  const cablesByTarget = {};
   appState.cables.forEach(cab => {
     if (!cablesByOrigin[cab.fromNodeId]) cablesByOrigin[cab.fromNodeId] = [];
     cablesByOrigin[cab.fromNodeId].push(cab);
+
+    if (!cablesByTarget[cab.toNodeId]) cablesByTarget[cab.toNodeId] = [];
+    cablesByTarget[cab.toNodeId].push(cab);
   });
 
-  const dropPalette = ['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ec4899', '#14b8a6'];
+  const dropPalette = ['#059669', '#0284c7', '#7c3aed', '#d97706', '#db2777', '#0d9488'];
   let extraLaneSpan = 0;
+  const placedBadgeBoxes = [];
+  const linePathsList = [];
+  const badgeItemsList = [];
 
-  const linesHtml = appState.cables.map(cab => {
+  appState.cables.forEach(cab => {
     const p1 = nodePositions[cab.fromNodeId];
     const p2 = nodePositions[cab.toNodeId];
-    if (!p1 || !p2) return '';
+    if (!p1 || !p2) return;
 
     const siblings = cablesByOrigin[cab.fromNodeId] || [cab];
     const laneIndex = siblings.indexOf(cab);
     const totalLanes = siblings.length;
 
-    const laneStepX = 22;
+    const incomingSiblings = cablesByTarget[cab.toNodeId] || [cab];
+    const inIndex = incomingSiblings.indexOf(cab);
+    const inTotal = incomingSiblings.length;
+
+    const laneStepX = 24;
     const laneStepY = 8;
     const centerShift = laneIndex - (totalLanes - 1) / 2;
+    const inShift = inIndex - (inTotal - 1) / 2;
     extraLaneSpan = Math.max(extraLaneSpan, Math.abs(centerShift) * laneStepX);
 
     const x1 = p1.x + 170;
     const y1 = p1.y + 38 + centerShift * laneStepY;
     const x2 = p2.x;
-    const y2 = p2.y + 38 + centerShift * laneStepY;
+    const y2 = p2.y + 38 + inShift * laneStepY;
 
-    const baseMidX = x1 + (x2 - x1) * 0.45;
-    const midX = Math.min(x2 - 28, Math.max(x1 + 28, baseMidX + centerShift * laneStepX));
+    const baseMidX = x1 + (x2 - x1) * 0.42;
+    const midX = Math.min(x2 - 85, Math.max(x1 + 35, baseMidX + centerShift * laneStepX));
 
     const routeM = calculateCableRouteMeters(cab);
     const totalM = routeM + Number(cab.reserveMeters || 0);
 
-    let color = '#38bdf8';
+    let color = '#0284c7';
     if (cab.type === 'troncal') {
-      color = '#a855f7';
+      color = '#7c3aed';
     } else if (cab.type === 'drop') {
       color = dropPalette[laneIndex % dropPalette.length];
     }
 
-    // Colocar la etiqueta en un punto escalonado para que no tape la línea ni otras etiquetas
-    const labelX = Math.min(x2 - 46, midX + 38 + (laneIndex % 2) * 14);
-    const labelY = y2 - 14 + (laneIndex % 3 - 1) * 6;
+    linePathsList.push(`
+      <path d="M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}"
+            fill="none" stroke="${color}" stroke-width="2.2" />
+    `);
 
-    return `
+    // Ubicar la etiqueta en el tramo final cercano a x2 sin tocar el nodo ni otras etiquetas
+    const badgeW = 84;
+    const badgeH = 20;
+    const labelCenterX = x2 - 52;
+    let labelCenterY = y2 - 16;
+
+    const overlaps = (cx, cy) => {
+      const left = cx - badgeW / 2;
+      const right = cx + badgeW / 2;
+      const top = cy - badgeH / 2;
+      const bottom = cy + badgeH / 2;
+
+      const hitsTargetNode =
+        right + 4 > p2.x &&
+        left - 4 < p2.x + 170 &&
+        bottom + 3 > p2.y &&
+        top - 3 < p2.y + 76;
+
+      if (hitsTargetNode) return true;
+
+      return placedBadgeBoxes.some(b =>
+        right + 4 > b.left &&
+        left - 4 < b.right &&
+        bottom + 4 > b.top &&
+        top - 4 < b.bottom
+      );
+    };
+
+    const candidateOffsets = [-16, 17, -36, 36, -54, 54];
+    for (const off of candidateOffsets) {
+      const candidateY = y2 + off;
+      if (!overlaps(labelCenterX, candidateY)) {
+        labelCenterY = candidateY;
+        break;
+      }
+    }
+
+    placedBadgeBoxes.push({
+      left: labelCenterX - badgeW / 2,
+      right: labelCenterX + badgeW / 2,
+      top: labelCenterY - badgeH / 2,
+      bottom: labelCenterY + badgeH / 2
+    });
+
+    badgeItemsList.push(`
       <g>
-        <path d="M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}"
-              fill="none" stroke="${color}" stroke-width="2.2" />
-        <rect x="${labelX - 42}" y="${labelY - 10}" width="84" height="20" rx="5"
-              fill="#0f172a" stroke="${color}" stroke-width="1.2" />
-        <text x="${labelX}" y="${labelY + 3.5}" text-anchor="middle" fill="#f8fafc"
-              font-size="9.5" font-family="JetBrains Mono">
+        <rect x="${labelCenterX - badgeW / 2}" y="${labelCenterY - badgeH / 2}"
+              width="${badgeW}" height="${badgeH}" rx="5"
+              fill="#ffffff" stroke="${color}" stroke-width="1.3" />
+        <text x="${labelCenterX}" y="${labelCenterY + 3.5}" text-anchor="middle" fill="#0f172a"
+              font-size="9.5" font-family="JetBrains Mono" font-weight="600">
           ${cab.cores}H &bull; ${totalM}m
         </text>
       </g>
-    `;
-  }).join('');
+    `);
+  });
+
+  const linesHtml = linePathsList.join('');
+  const badgesHtml = badgeItemsList.join('');
 
   const svgW = Math.max(1200, startX * 2 + 5 * colWidth + extraLaneSpan * 2);
   const svgH = Math.max(540, startY * 2 + maxRows * rowHeight);
@@ -135,6 +194,7 @@ function renderSingleLineDiagram(opticalMap = computeOpticalNetwork()) {
     <svg width="${svgW}" height="${svgH}" class="mx-auto">
       ${headersHtml}
       ${linesHtml}
+      ${badgesHtml}
       ${blocksHtml}
     </svg>
   `;
