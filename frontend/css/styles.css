@@ -77,6 +77,10 @@ body {
   display: none;
 }
 
+#print-portal {
+  display: none;
+}
+
 @media print {
   @page {
     size: landscape;
@@ -106,9 +110,20 @@ body {
   body.printing-mode #print-portal {
     display: block !important;
     width: 100% !important;
-    padding: 8px !important;
-    color: #e2e8f0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    padding: 6px !important;
     background: #090d16 !important;
+    color: #e2e8f0 !important;
+  }
+
+  body.printing-mode #print-portal * {
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
   }
 
   body.printing-mode #print-portal .pdf-header {
@@ -127,10 +142,25 @@ body {
     display: block !important;
   }
 
+  body.printing-mode #print-portal .grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
   body.printing-mode #print-portal table {
     width: 100% !important;
     border-collapse: collapse !important;
+    margin-top: 8px !important;
+    margin-bottom: 14px !important;
     font-size: 11px !important;
+  }
+
+  body.printing-mode #print-portal th,
+  body.printing-mode #print-portal td {
+    border: 1px solid #334155 !important;
+    padding: 5px 8px !important;
+    text-align: left !important;
   }
 
   body.printing-mode #print-portal tr,
