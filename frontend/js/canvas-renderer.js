@@ -1,6 +1,79 @@
 /**
  * Renderizado vectorial SVG del plano CAD/GIS, cables, reservas y nodos.
  */
+function renderNodeVectorGlyph(type, color) {
+  switch (type) {
+    case 'OLT':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round">
+          <rect x="-10" y="-9" width="20" height="7" rx="1.5" />
+          <rect x="-10" y="2" width="20" height="7" rx="1.5" />
+          <circle cx="-6" cy="-5.5" r="1" fill="${color}" stroke="none" />
+          <circle cx="-6" cy="5.5" r="1" fill="${color}" stroke="none" />
+          <line x1="-1" y1="-5.5" x2="6" y2="-5.5" />
+          <line x1="-1" y1="5.5" x2="6" y2="5.5" />
+        </g>
+      `;
+    case 'ODF':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round">
+          <line x1="-9" y1="-7" x2="9" y2="-7" />
+          <line x1="-9" y1="-2.3" x2="9" y2="-2.3" />
+          <line x1="-9" y1="2.3" x2="9" y2="2.3" />
+          <line x1="-9" y1="7" x2="9" y2="7" />
+        </g>
+      `;
+    case 'MUFA':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round">
+          <rect x="-7" y="-10" width="14" height="20" rx="6" />
+          <line x1="-7" y1="-2" x2="7" y2="-2" />
+          <line x1="-3" y1="-6" x2="3" y2="-6" />
+          <line x1="-3" y1="3" x2="3" y2="3" />
+        </g>
+      `;
+    case 'NAP':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="-9" y="-8" width="18" height="16" rx="2.5" />
+          <line x1="-9" y1="-3" x2="9" y2="-3" />
+          <circle cx="-4" cy="3" r="1.2" fill="${color}" stroke="none" />
+          <circle cx="0" cy="3" r="1.2" fill="${color}" stroke="none" />
+          <circle cx="4" cy="3" r="1.2" fill="${color}" stroke="none" />
+        </g>
+      `;
+    case 'SPLITTER':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="-10" y1="0" x2="-2" y2="0" />
+          <path d="M -2 0 L 4 -6 L 9 -6" />
+          <path d="M -2 0 L 9 0" />
+          <path d="M -2 0 L 4 6 L 9 6" />
+          <circle cx="9" cy="-6" r="1.3" fill="${color}" stroke="none" />
+          <circle cx="9" cy="0" r="1.3" fill="${color}" stroke="none" />
+          <circle cx="9" cy="6" r="1.3" fill="${color}" stroke="none" />
+        </g>
+      `;
+    case 'POSTE':
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round">
+          <line x1="0" y1="-10" x2="0" y2="10" />
+          <line x1="-7" y1="-5" x2="7" y2="-5" />
+          <line x1="-5" y1="0" x2="5" y2="0" />
+        </g>
+      `;
+    case 'ONT':
+    default:
+      return `
+        <g stroke="${color}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M -9 -1 L 0 -9 L 9 -1" />
+          <path d="M -6 -3 L -6 8 L 6 8 L 6 -3" />
+          <circle cx="0" cy="3" r="1.5" fill="${color}" stroke="none" />
+        </g>
+      `;
+  }
+}
+
 function renderCanvas(opticalMap) {
   const vp = document.getElementById('viewport-group');
   vp.setAttribute('transform', `translate(${appState.viewport.x}, ${appState.viewport.y}) scale(${appState.viewport.zoom})`);
@@ -93,9 +166,7 @@ function renderCanvas(opticalMap) {
         <rect x="-20" y="-20" width="40" height="40" rx="11" fill="#0f172a" stroke="${isSelected ? '#38bdf8' : spec.color}" stroke-width="${isSelected ? 2.5 : 2}" />
         <rect x="-16" y="-16" width="32" height="32" rx="8" fill="${spec.color}" fill-opacity="0.18" />
 
-        <text x="0" y="5" text-anchor="middle" fill="${spec.color}" font-family="Font Awesome 6 Free" font-weight="900" font-size="15">
-          ${spec.icon}
-        </text>
+        ${renderNodeVectorGlyph(node.type, spec.color)}
 
         ${isSpliceable && (node.splices?.length || 0) > 0 ? `
           <g transform="translate(-20, -20)">
@@ -194,5 +265,3 @@ function renderGISBackdrop() {
     </g>
   `;
 }
-
-
