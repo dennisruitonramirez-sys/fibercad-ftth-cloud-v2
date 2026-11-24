@@ -239,54 +239,66 @@ body {
     page-break-inside: avoid !important;
   }
 }
-@media screen and (max-width: 640px) {
-  body {
-    overflow-x: hidden !important;
+
+/* ===== AJUSTE RESPONSIVE SEGURO (CELULAR Y TABLET) ===== */
+@media screen and (max-width: 1024px) {
+  /* Barra superior: permitir desplazamiento horizontal limpio sin deformar ni encimar botones */
+  header {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
   }
 
-  /* Evitar que la barra superior y sus menús/selects se amontonen o desborden */
-  header,
-  nav,
-  header > div,
-  nav > div {
-    max-width: 100% !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
+  header > * {
+    flex-shrink: 0 !important;
   }
 
-  header select,
-  nav select,
-  header button,
-  nav button {
+  /* Evitar que el lienzo se quede sin espacio en tablet */
+  #left-sidebar {
+    width: 220px !important;
+    min-width: 220px !important;
+  }
+
+  #right-sidebar {
+    width: 250px !important;
+    min-width: 250px !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  /* En celular, apilar paneles en vertical para que el plano CAD tenga todo el ancho */
+  body > div.flex-1,
+  main {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+
+  #left-sidebar,
+  #right-sidebar {
+    width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-  }
-
-  /* Hacer que el área de diseño sea visible y desplazable en pantalla estrecha */
-  #view-canvas,
-  #canvas-container,
-  #canvas-wrapper,
-  [id*="canvas"] {
-    display: block !important;
-    width: 100% !important;
-    min-height: 300px !important;
-    height: 45vh !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  #network-svg {
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 280px !important;
-    touch-action: pan-x pan-y !important;
-  }
-
-  /* Limitar altura del panel izquierdo para que el área de diseño también se vea */
-  aside,
-  #left-sidebar,
-  [id*="sidebar"] {
-    max-height: 32vh !important;
+    max-height: 240px !important;
     overflow-y: auto !important;
+    border-right: none !important;
+    border-left: none !important;
+  }
+
+  #view-canvas {
+    min-height: 360px !important;
+    height: 55vh !important;
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  /* Capturar gestos táctiles dentro del plano CAD para poder mover/arrastrar */
+  #network-svg {
+    touch-action: none !important;
+  }
+
+  #unifilar-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 }
