@@ -70,3 +70,26 @@ body {
 .selection-ring {
   animation: pulseRing 2s infinite;
 }
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body, #view-canvas, #view-unifilar, #view-budget, main {
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  header, aside, #drawing-helper-bar, #toast-notification, #splice-modal {
+    display: none !important;
+  }
+}
