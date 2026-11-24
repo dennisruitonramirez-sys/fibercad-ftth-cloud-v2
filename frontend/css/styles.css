@@ -279,23 +279,90 @@ body {
     overflow-y: auto !important;
   }
 
-  /* Apilar panel izquierdo, lienzo central e inspector en columna */
+  /* Apilar panel superior de herramientas, lienzo central e inspector */
   body > div.flex-1 {
     flex-direction: column !important;
     overflow: visible !important;
   }
 
+  /* Panel de herramientas compacto en la parte superior */
   #left-sidebar {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    max-height: 245px !important;
-    overflow-y: auto !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
     border-left: none !important;
     border-right: none !important;
+    border-bottom: 1px solid #1e293b !important;
   }
 
-  /* Ocultar leyenda TIA-598-C en celular para liberar espacio vertical */
+  /* Compactar la sección de Seleccionar / Trazar / Mover */
+  #left-sidebar > div:first-child {
+    padding: 6px 8px !important;
+  }
+
+  #left-sidebar > div:first-child > div:first-child {
+    display: none !important; /* Oculta el subtítulo "HERRAMIENTAS DE EDICIÓN" para ahorrar altura */
+  }
+
+  #left-sidebar .tool-btn {
+    flex-direction: row !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+  }
+
+  #left-sidebar .tool-btn i {
+    margin-bottom: 0 !important;
+  }
+
+  /* Convertir la paleta de equipos (OLT, ODF, Mufa, NAP, Splitter, Poste, ONT) en barra horizontal deslizable */
+  #left-sidebar > div:nth-child(2) {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    space-y: 0 !important;
+  }
+
+  /* Aplanar los grupos (Cabecera, Planta Externa, Abonado) para que todos los botones queden en la misma fila horizontal */
+  #left-sidebar > div:nth-child(2) > div,
+  #left-sidebar > div:nth-child(2) > div > div.space-y-1\.5 {
+    display: contents !important;
+  }
+
+  /* Ocultar títulos de categoría en móvil para que solo salgan los botones de equipo */
+  #left-sidebar > div:nth-child(2) > div > div:first-child {
+    display: none !important;
+  }
+
+  /* Estilo compacto de cada botón de equipo en horizontal */
+  #left-sidebar .palette-item {
+    flex-shrink: 0 !important;
+    padding: 5px 10px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
+    background: #0f172a !important;
+  }
+
+  #left-sidebar .palette-item > div:first-child {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+  }
+
+  /* Ocultar la descripción larga y el '+' para que quepan varios equipos a la vista */
+  #left-sidebar .palette-item .truncate,
+  #left-sidebar .palette-item > i.fa-plus {
+    display: none !important;
+  }
+
+  /* Ocultar leyenda TIA-598-C en celular */
   #left-sidebar > div:last-child {
     display: none !important;
   }
@@ -324,29 +391,28 @@ body {
     overflow: visible !important;
   }
 
-  /* Deshacer el contenedor envolvente para reordenar sus 2 bloques por separado */
   #view-canvas > div:first-child {
     display: contents !important;
   }
 
-  /* Bloque 2 (Zoom y Centrar): arriba del área de diseño, compacto */
+  /* Controles de Zoom y Centrar arriba del área de diseño */
   #view-canvas > div:first-child > div:last-child {
     order: 1 !important;
     width: 100% !important;
     justify-content: center !important;
-    padding: 5px 8px !important;
+    padding: 4px 8px !important;
     background: #0f172a !important;
     border-bottom: 1px solid #1e293b !important;
     border-radius: 0 !important;
     pointer-events: auto !important;
   }
 
-  /* Área de diseño CAD en el centro */
+  /* Área de diseño CAD amplia y visible completa en pantalla */
   #canvas-wrapper {
     order: 2 !important;
     width: 100% !important;
-    height: 56vh !important;
-    min-height: 360px !important;
+    height: 68vh !important;
+    min-height: 420px !important;
     flex: none !important;
     position: relative !important;
     overflow: hidden !important;
@@ -360,7 +426,7 @@ body {
     touch-action: none !important;
   }
 
-  /* Bloque 1 marcado en rojo (Escala y Longitud λ): debajo del área de diseño */
+  /* Escala y Longitud λ debajo del área de diseño */
   #view-canvas > div:first-child > div:first-child {
     order: 3 !important;
     width: 100% !important;
