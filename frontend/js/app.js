@@ -362,7 +362,7 @@ function normalizeSvgForLightPrint(svgEl) {
       el.setAttribute('fill', '#f8fafc');
     }
   });
-}
+}  //función para pdf no se pierda los colores cuando el fondo se haga blanco
 
 function exportSpecificPDF(kind = 'cad') {
   const projectTitle = appState.projectName || 'Proyecto FTTH';
@@ -520,7 +520,9 @@ function exportSpecificPDF(kind = 'cad') {
   window.addEventListener('afterprint', cleanup);
   document.body.classList.add('printing-mode', orientationClass);
   setTimeout(() => window.print(), 150);
-}
+} //funcion para generar pdf
+
+
 
 let toastTimer = null;
 function showToast(msg, type = 'success') {
@@ -546,4 +548,10 @@ function showToast(msg, type = 'success') {
 async function deleteCurrentProject() {
   const idToDelete = appState.projectId;
   if (!idToDelete) {
-    showToast('No hay un proyecto guardado seleccionado para borrar', '
+    showToast('No hay un proyecto guardado seleccionado para borrar', 'info');
+    return;
+  }
+  const confirmed = window.confirm(`¿Seguro que deseas borrar el proyecto "${appState.projectName}" de la nube? Esta acción no se puede deshacer.`);
+  if (!confirmed) return;
+  await FiberApiClient.deleteProjectFromServer(idToDelete);
+}
