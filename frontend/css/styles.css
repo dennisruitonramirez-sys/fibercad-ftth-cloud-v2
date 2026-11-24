@@ -160,11 +160,18 @@ body {
     border-radius: 6px !important;
   }
 
-  /* Tarjetas y secciones del Presupuesto / BOM en fondo blanco */
+  /* Apilar secciones y grids en columna para que no se monten entre sí */
   body.printing-mode #print-portal .grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  body.printing-mode #print-portal .grid > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   body.printing-mode #print-portal .bg-slate-900,
@@ -187,6 +194,9 @@ body {
   /* Tablas del BOM / Presupuesto */
   body.printing-mode #print-portal table {
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
     border-collapse: collapse !important;
     margin-top: 8px !important;
     margin-bottom: 14px !important;
@@ -194,7 +204,10 @@ body {
     background: #ffffff !important;
   }
 
-  body.printing-mode #print-portal thead,
+  body.printing-mode #print-portal thead {
+    display: table-header-group !important;
+  }
+
   body.printing-mode #print-portal th {
     background: #f1f5f9 !important;
     color: #0f172a !important;
@@ -210,6 +223,7 @@ body {
     border: 1px solid #cbd5e1 !important;
     padding: 5px 8px !important;
     text-align: left !important;
+    word-break: break-word !important;
   }
 
   body.printing-mode #print-portal tr,
