@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { getProjects, getProjectById, saveProject } = require('./store');
+const { getProjects, getProjectById, saveProject, deleteProject } = require('./store');
 const { computeOpticalBudget } = require('./opticalService');
 
 const app = express();
@@ -43,6 +43,19 @@ app.put('/api/projects/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al guardar el proyecto' });
+  }
+});
+
+app.delete('/api/projects/:id', async (req, res) => {
+  try {
+    const deleted = await deleteProject(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    res.json({ ok: true, id: req.params.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al eliminar el proyecto' });
   }
 });
 
