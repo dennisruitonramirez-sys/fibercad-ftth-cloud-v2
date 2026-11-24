@@ -372,6 +372,7 @@ function exportSpecificPDF(kind = 'cad') {
   let contentHtml = '';
 
   if (kind === 'cad') {
+    docTitle = `Plano CAD FTTH — ${projectTitle}`;
     const netSvg = document.getElementById('network-svg');
     if (!netSvg) {
       showToast('No se encontró el SVG del Plano CAD', 'warning');
@@ -386,13 +387,27 @@ function exportSpecificPDF(kind = 'cad') {
 
     const xs = [];
     const ys = [];
+    const nodeMap = {};
+
     (appState.nodes || []).forEach(n => {
       if (typeof n.x === 'number' && typeof n.y === 'number') {
-        xs.push(n.x);
-        ys.push(n.y);
+        nodeMap[n.id] = n;
+        xs.push(n.x, n.x + 120);
+        ys.push(n.y, n.y + 90);
       }
     });
+
     (appState.cables || []).forEach(c => {
+      const fromNode = nodeMap[c.fromNodeId];
+      const toNode = nodeMap[c.toNodeId];
+      if (fromNode) {
+        xs.push(fromNode.x + 30);
+        ys.push(fromNode.y + 30);
+      }
+      if (toNode) {
+        xs.push(toNode.x + 30);
+        ys.push(toNode.y + 30);
+      }
       (c.waypoints || []).forEach(wp => {
         if (typeof wp.x === 'number' && typeof wp.y === 'number') {
           xs.push(wp.x);
@@ -402,18 +417,21 @@ function exportSpecificPDF(kind = 'cad') {
     });
 
     if (xs.length && ys.length) {
-      const minX = Math.min(...xs) - 140;
-      const minY = Math.min(...ys) - 120;
-      const maxX = Math.max(...xs) + 160;
-      const maxY = Math.max(...ys) + 140;
-      clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${Math.max(800, maxX - minX)} ${Math.max(500, maxY - minY)}`);
+      const minX = Math.min(...xs) - 160;
+      const minY = Math.min(...ys) - 140;
+      const maxX = Math.max(...xs) + 180;
+      const maxY = Math.max(...ys) + 160;
+      const viewW = Math.max(900, maxX - minX);
+      const viewH = Math.max(560, maxY - minY);
+      clonedSvg.setAttribute('viewBox', `${minX} ${minY} ${viewW} ${viewH}`);
+      clonedSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     }
 
     clonedSvg.removeAttribute('width');
     clonedSvg.removeAttribute('height');
+    clonedSvg.classList.remove('w-full', 'h-full');
     normalizeSvgForLightPrint(clonedSvg);
     contentHtml = clonedSvg.outerHTML;
-
   } else if (kind === 'unifilar') {
     docTitle = `Diagrama Unifilar FTTH — ${projectTitle}`;
     renderSingleLineDiagram();
